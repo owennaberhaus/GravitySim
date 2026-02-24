@@ -144,12 +144,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
+    <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\menu.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\path.cpp" />
     <ClCompile Include="src\menu.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\clicker.h" />
     <ClInclude Include="src\object.h" />
     <ClInclude Include="src\path.h" />

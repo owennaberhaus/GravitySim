@@ -11,12 +11,13 @@
 #include <random>
 #include <chrono>
 
-#include "path.h"
 #include "object.h"
+#include "path.h"
 #include "shader.h"
 #include "menu.h"
 #include "timer.h"
 #include "clicker.h"
+#include "camera.h"
 
 float g_scrollDelta{ 0 };
 
@@ -68,6 +69,7 @@ int main(void)
     int modelLoc = glGetUniformLocation(shader, "u_model"); // allows a translation matrix
     int colorLoc = glGetUniformLocation(shader, "u_color"); // accesses a glm::vec3 of rgb color
     int projLoc = glGetUniformLocation(shader, "u_projection"); // basically allows window scaling 
+    int viewLoc = glGetUniformLocation(shader, "u_view"); // allows camera movement
     int width, height; // used for projection matrix scaling
     float worldLeft, worldRight, worldBottom, worldTop; // absolute positions of window
 
@@ -80,9 +82,10 @@ int main(void)
                                // without it shit get wack :(
     glfwSetScrollCallback(window, scroll_callback); // prepare glfw for scroll input
 
-    Menu menu;
     Timer timer;
     Clicker clicker;
+    Camera camera(viewLoc);
+    Menu menu(camera);
      
     std::cout << "right click to spawn in a movable object, left click for immovable\n" <<
         "Masses will be equal to the MIDDLE reference object\n" <<
@@ -98,16 +101,17 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         float deltaTime = timer.delta();
+        camera.Update(window);
 
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
-        SolveProjection(worldLeft, worldRight, worldBottom, worldTop, projLoc, width, height);  
+        float halfHeight = SolveProjection(worldLeft, worldRight, worldBottom, worldTop, projLoc, width, height, camera);  
 
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
         float worldX = worldLeft + (xpos / width) * (worldRight - worldLeft);
         float worldY = worldTop - (ypos / height) * (worldTop - worldBottom);
-        clicker.MouseControl(window, worldX, worldY, objects, menu, g_scrollDelta);
+        clicker.MouseControl(window, worldX, worldY, objects, menu, g_scrollDelta, camera);
         menu.ToggleGravityAndInitVel(window);
 
         
@@ -120,11 +124,12 @@ int main(void)
             obj->DrawPath(modelLoc, colorLoc);
             obj->Update(deltaTime);
             obj->DrawObject(modelLoc, colorLoc);
-
+            if(obj->GetMovable())
+                std::cout << obj->GetPosZ() << " | ";
         }
-        menu.UpdateAndDrawMenu(modelLoc, colorLoc, window, deltaTime);
-
-        DeleteObjects(objects, window, worldX, worldY);
+        if(objects.size() > 0)
+            std::cout << '\n';
+        menu.UpdateAndDrawMenu(modelLoc, colorLoc, window, deltaTime, halfHeight);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

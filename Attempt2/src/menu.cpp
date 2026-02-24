@@ -1,31 +1,72 @@
 #include "menu.h"
 
-Menu::Menu()
+Menu::Menu(Camera& camera) : 
+	m_camera(&camera)
 {
-
+	m_selectedIndicator.SetPosX(selectedSlider->GetPosX());
+	m_selectedIndicator.SetPosY(selectedSlider->GetPosY());
+	m_massSlider.SetColor(glm::vec3(0.7f, 8.0f, 0.2f));
+	m_selectedIndicator.SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
 }
 Menu::~Menu()
 {
 
 }
 
-void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, GLFWwindow* window, float delta)
+int Menu::CheckSelected()
+{
+	if (selectedSlider == &m_xVelSlider)
+		return 1;
+	else if (selectedSlider == &m_massSlider)
+		return 2;
+	else if (selectedSlider == &m_yVelSlider)
+		return 3;
+	else 
+		return 4;
+}
+
+void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, GLFWwindow* window, float delta, float halfHeight)
 {
 	m_selectedIndicator.SetMass(selectedSlider->GetMass() + 0.01f);
 	SwapSliderColors();
 
+	float selectedX;
+	if (CheckSelected() == 1)
+		selectedX =  0.7f;
+	else if (CheckSelected() == 2)
+		selectedX =  0.0f;
+	else if (CheckSelected() == 3)
+		selectedX = -0.7f;
+	else
+		selectedX = -0.9f;
+
+	m_selectedIndicator.SetPosition(m_camera->GetPosition().x - (selectedX * halfHeight), 
+									m_camera->GetPosition().y + (0.9f * halfHeight));
 	m_selectedIndicator.Update(delta);
 	m_selectedIndicator.DrawObject(modelLoc, colorLoc);
+	m_xVelSlider.SetPosition(m_camera->GetPosition().x - (0.7f * halfHeight), 
+							 m_camera->GetPosition().y + (0.9f * halfHeight));
 	m_xVelSlider.Update(delta);
 	m_xVelSlider.DrawObject(modelLoc, colorLoc);
+	//m_massSlider.SetPosition(m_camera->GetPosition().x,
+	//						 m_camera->GetPosition().y + (0.9f * halfHeight));
+	m_massSlider.SetPosition(m_camera->GetPosition().x,
+		m_camera->GetPosition().y + (0.9f * halfHeight));
 	m_massSlider.Update(delta);
 	m_massSlider.DrawObject(modelLoc, colorLoc);
+	m_yVelSlider.SetPosition(m_camera->GetPosition().x + (0.7f * halfHeight),
+							 m_camera->GetPosition().y + (0.9f * halfHeight));
 	m_yVelSlider.Update(delta);
 	m_yVelSlider.DrawObject(modelLoc, colorLoc);
+	m_zVelSlider.SetPosition(m_camera->GetPosition().x + (0.9f * halfHeight),
+		m_camera->GetPosition().y + (0.9f * halfHeight));
+	m_zVelSlider.Update(delta);
+	m_zVelSlider.DrawObject(modelLoc, colorLoc);
 	
 	++m_timer;
 	++m_timer2;
 	++m_timer3;
+	++m_timer4;
 	UpdateSelected(window);
 }
 
@@ -35,6 +76,8 @@ void Menu::IncSelectedRight()
 		selectedSlider = &m_massSlider;
 	else if (selectedSlider == &m_massSlider)
 		selectedSlider = &m_yVelSlider;
+	else if (selectedSlider == &m_yVelSlider)
+		selectedSlider = &m_zVelSlider;
 	else
 		selectedSlider = &m_xVelSlider;
 
@@ -46,11 +89,13 @@ void Menu::IncSelectedRight()
 void Menu::IncSelectedLeft()
 {
 	if (selectedSlider == &m_xVelSlider)
-		selectedSlider = &m_yVelSlider;
+		selectedSlider = &m_zVelSlider;
 	else if (selectedSlider == &m_massSlider)
 		selectedSlider = &m_xVelSlider;
-	else
+	else if (selectedSlider == &m_yVelSlider)
 		selectedSlider = &m_massSlider;
+	else
+		selectedSlider = &m_yVelSlider;
 
 	m_selectedIndicator.SetPosX(selectedSlider->GetPosX());
 	m_selectedIndicator.SetPosY(selectedSlider->GetPosY());
@@ -94,6 +139,18 @@ void Menu::UpdateSelected(GLFWwindow* window)
 		IncSelectedLeft();
 		m_timer = 0;
 	}
+
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && m_timer4 > 5)
+	{
+		selectedSlider->IncMass( 0.005f);
+		m_timer4 = 0;
+	}
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && m_timer4 > 5 && selectedSlider->GetMass() > 0)
+	{
+		selectedSlider->IncMass(-0.005f);
+		m_timer4 = 0;
+	}
+
 	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && m_timer2 > 20 && (selectedSlider == &m_xVelSlider || selectedSlider == &m_yVelSlider))
 	{
 		if (m_xPositive && selectedSlider == &m_xVelSlider)
@@ -105,6 +162,11 @@ void Menu::UpdateSelected(GLFWwindow* window)
 			m_yPositive = false;
 		else if (!m_yPositive && selectedSlider == &m_yVelSlider)
 			m_yPositive = true;
+
+		if (m_zPositive && selectedSlider == &m_zVelSlider)
+			m_zPositive = false;
+		else if (!m_zPositive && selectedSlider == &m_zVelSlider)
+			m_zPositive = true;
 
 		m_timer2 = 0;
 	}
@@ -122,23 +184,15 @@ void Menu::SwapSliderColors()
 	else
 		m_yVelSlider.SetColor(glm::vec3(glm::vec3(1.0f, 0.2f, 0.5f)));
 
+	if (m_zPositive)
+		m_zVelSlider.SetColor(glm::vec3(glm::vec3(0.5f, 1.0f, 0.2f)));
+	else
+		m_zVelSlider.SetColor(glm::vec3(glm::vec3(1.0f, 0.2f, 0.5f)));
+
 }
 
-void DeleteObjects(std::vector<std::unique_ptr<Object>>& objects, GLFWwindow* window, float worldX, float worldY)
-{
-	for (size_t i{ 0 }; i < objects.size(); ++i)
-	{
-		float distanceMTO = static_cast<float>(sqrt(pow((objects[i]->GetPosX() - worldX), 2) + pow((objects[i]->GetPosY() - worldY), 2))); //mouse to object
-		if (distanceMTO < (objects[i]->GetMass() + 0.01) && glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-		{
-			objects.erase(objects.begin() + i);
-			--i;
-		}
-
-	}
-}
-
-void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, int projLoc, float width, float height)
+float SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, 
+					 int projLoc, float width, float height, Camera& camera)
 {
 	float aspect = (float)width / (float)height;
 
@@ -157,17 +211,18 @@ void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, fl
 		worldTop = 1.0f / aspect;
 	}
 
-	glm::mat4 projection;
-	if (aspect >= 1.0f)
-	{
-		// Wide screen case
-		projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f);
-	}
-	else
-	{
-		// Tall screen case
-		projection = glm::ortho(-1.0f, 1.0f, -1.0f / aspect, 1.0f / aspect);
-	}
+	float centerX = (worldLeft + worldRight) / 2.0f;
+	float centerY = (worldBottom + worldTop) / 2.0f;
+	float halfWidth = (worldRight - worldLeft) / 2.0f / camera.GetZoom();
+	float halfHeight = (worldTop - worldBottom) / 2.0f / camera.GetZoom();
 
+	worldLeft = centerX - halfWidth;
+	worldRight = centerX + halfWidth;
+	worldBottom = centerY - halfHeight;
+	worldTop = centerY + halfHeight;
+
+	glm::mat4 projection = glm::ortho(worldLeft, worldRight, worldBottom, worldTop);
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+	return halfHeight;
 }

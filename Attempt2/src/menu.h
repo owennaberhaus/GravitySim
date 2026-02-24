@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include "object.h"
+#include "camera.h"
 
 class Menu
 {
@@ -11,45 +12,52 @@ private:
 	void IncSelectedLeft();
 	void UpdateSelected(GLFWwindow* window);
 	void SwapSliderColors();
+	int CheckSelected();
 
 public:
-	Menu();
+	Menu(Camera& camera);
 	~Menu();
 
-	void UpdateAndDrawMenu(int modelLoc, int colorLoc, GLFWwindow* window, float delta);
+	void UpdateAndDrawMenu(int modelLoc, int colorLoc, GLFWwindow* window, float delta, float halfHeight);
 	void ToggleGravityAndInitVel(GLFWwindow* window);
 	
 
 	float GetMass() { return m_massSlider.GetMass(); }
 	float GetXVel() { return m_xVelSlider.GetMass(); }
 	float GetYVel() { return m_yVelSlider.GetMass(); }
+	float GetZVel() { return m_zVelSlider.GetMass(); } 
 
 	float GetXPositive() { return m_xPositive; }
 	float GetYPositive() { return m_yPositive; }
+	float GetZPositive() { return m_zPositive; } 
 
 	bool GetGravitySwitch() { return m_gravitySwitch; }
 	bool GetInitVelSwitch() { return m_initVelSwitch; }
 
+	Object* GetSelectedSlider() { return selectedSlider; }
 
-	Object* selectedSlider{ &m_massSlider };
 
 private:
 
-	Object m_massSlider       {  0.0f, 0.9f, 0.00000f, 0.00000f, 0.010f, false, glm::vec3(0.5f, 1.0f, 0.2f), false };
-	Object m_xVelSlider       { -0.7f, 0.9f, 0.00000f, 0.00000f, 0.010f, false, glm::vec3(0.5f, 1.0f, 0.2f), false };
-	Object m_yVelSlider       {  0.7f, 0.9f, 0.00000f, 0.00000f, 0.010f, false, glm::vec3(0.5f, 1.0f, 0.2f), false };
-	Object m_selectedIndicator{  selectedSlider->GetPosX(), selectedSlider->GetPosY(), 0.00000f, 0.00000f, 0.013f, false, glm::vec3(1.0f, 1.0f, 1.0f), false};
+	Object m_massSlider       {  0.0f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object m_xVelSlider       { -0.7f, 0.9f, 0.2f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object m_yVelSlider       {  0.7f, 0.9f, 0.2f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object m_zVelSlider       {  0.9f, 0.9f, 0.2f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object* selectedSlider{ &m_massSlider };
+	Object m_selectedIndicator{  0.0f, 0.0f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.013f, false, glm::vec3(1.0f, 1.0f, 1.0f), false};
 
 	int m_timer{ 0 };
 	int m_timer2{ 0 };
 	int m_timer3{ 0 };
+	int m_timer4{ 0 };
 	bool m_xPositive{ true };
 	bool m_yPositive{ true };
+	bool m_zPositive{ true };
 	bool m_gravitySwitch{ true };
 	bool m_initVelSwitch{ true };
+	Camera* m_camera{ nullptr }; // for knowing the camera's position so the menu stays stuck to the camera
 
 };
 
-void DeleteObjects(std::vector<std::unique_ptr<Object>>& objects, GLFWwindow* window, float worldX, float worldY);
-
-void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, int projLoc, float width, float height);
+float SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, 
+					 int projLoc, float width, float height, Camera& camera);

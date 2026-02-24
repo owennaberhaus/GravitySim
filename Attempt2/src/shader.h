@@ -8,10 +8,11 @@ std::string vertexShader =
 "\n"
 "uniform mat4 u_model;\n"
 "uniform mat4 u_projection;\n"
+"uniform mat4 u_view;\n"
 "\n"
 "void main()\n"
 "{\n"
-"    gl_Position = u_projection * u_model * vec4(position, 0.0, 1.0);\n"
+"    gl_Position = u_projection * u_view * u_model * vec4(position, 0.0, 1.0);\n"
 "}\n";
 
 std::string fragmentShader =
