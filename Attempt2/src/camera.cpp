@@ -45,10 +45,20 @@ void Camera::HandleInput(GLFWwindow* window)
 
 void Camera::UpdateViewMatrix()
 {
-	glm::mat4 view = glm::lookAt(m_position, m_target, cameraUp);
+	glm::vec3 C = m_position;
+	glm::vec3 T = m_target;
+
+	glm::vec3 forward = glm::normalize(T - C);
+	glm::vec3 worldUp = glm::vec3(0, 1, 0);
+
+	m_cameraRight = glm::normalize(glm::cross(forward, worldUp));
+	m_cameraUp = glm::normalize(glm::cross(m_cameraRight, forward));
+
+	glm::mat4 view = glm::lookAt(m_position, m_target, m_cameraUp);
 	glUniformMatrix4fv(m_viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 }
 
+// TODO move movement to mouse input
 void Camera::catchMouseMovement(GLFWwindow* window)
 {
 	

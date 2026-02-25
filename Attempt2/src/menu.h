@@ -46,6 +46,8 @@ private:
 	Object* selectedSlider{ &m_massSlider };
 	Object m_selectedIndicator{  0.0f, 0.0f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.013f, false, glm::vec3(1.0f, 1.0f, 1.0f), false};
 
+	glm::vec3 m_menuPosition{ 0, 0, 0 };
+
 	int m_timer{ 0 };
 	int m_timer2{ 0 };
 	int m_timer3{ 0 };

@@ -32,35 +32,47 @@ void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, GLFWwindow* window, flo
 
 	float selectedX;
 	if (CheckSelected() == 1)
-		selectedX =  0.7f;
+		selectedX = 0.7f;
 	else if (CheckSelected() == 2)
-		selectedX =  0.0f;
+		selectedX = 0.0f;
 	else if (CheckSelected() == 3)
 		selectedX = -0.7f;
 	else
 		selectedX = -0.9f;
 
-	
-	m_xVelSlider.SetPosition(m_camera->GetPosition2().x - (0.7f * halfHeight), 
-							 m_camera->GetPosition2().y + (0.9f * halfHeight));
-	m_xVelSlider.Update(delta);
-	m_xVelSlider.DrawObject(modelLoc, colorLoc);
-	m_massSlider.SetPosition(m_camera->GetPosition2().x,
-		m_camera->GetPosition2().y + (0.9f * halfHeight));
+	glm::vec3 camera = m_camera->GetPosition();
+	glm::vec3 target = m_camera->GetTarget();
+
+	glm::vec3 forward = glm::normalize(target - camera);
+	float distance = 2.0f; // how far in front of camera
+
+	glm::vec3 midpoint = camera + forward * distance;
+
+	float heightOffset = 2.0f * halfHeight;
+
+	//m_xVelSlider.SetPosition(m_menuPosition.x - (0.7f * halfHeight), 
+	//	m_menuPosition.y + (0.9f * halfHeight));
+	//m_xVelSlider.Update(delta);
+	//m_xVelSlider.DrawObject(modelLoc, colorLoc);
+	m_massSlider.SetPosition(
+		midpoint.x + m_camera->GetUp().x * heightOffset,
+		midpoint.y + m_camera->GetUp().y * heightOffset,
+		midpoint.z + m_camera->GetUp().z * heightOffset
+	);
 	m_massSlider.Update(delta);
 	m_massSlider.DrawObject(modelLoc, colorLoc);
-	m_yVelSlider.SetPosition(m_camera->GetPosition2().x + (0.7f * halfHeight),
-							 m_camera->GetPosition2().y + (0.9f * halfHeight));
-	m_yVelSlider.Update(delta);
-	m_yVelSlider.DrawObject(modelLoc, colorLoc);
-	m_zVelSlider.SetPosition(m_camera->GetPosition2().x + (0.9f * halfHeight),
-		m_camera->GetPosition2().y + (0.9f * halfHeight));
-	m_zVelSlider.Update(delta);
-	m_zVelSlider.DrawObject(modelLoc, colorLoc);
-	m_selectedIndicator.SetPosition(m_camera->GetPosition2().x - (selectedX * halfHeight),
-		m_camera->GetPosition2().y + (0.9f * halfHeight));
-	m_selectedIndicator.Update(delta);
-	m_selectedIndicator.DrawObject(modelLoc, colorLoc);
+	//m_yVelSlider.SetPosition(m_menuPosition.x + (0.7f * halfHeight),
+	//						 m_menuPosition.y + (0.9f * halfHeight));
+	//m_yVelSlider.Update(delta);
+	//m_yVelSlider.DrawObject(modelLoc, colorLoc);
+	//m_zVelSlider.SetPosition(m_menuPosition.x + (0.9f * halfHeight),
+	//						 m_menuPosition.y + (0.9f * halfHeight));
+	//m_zVelSlider.Update(delta);
+	//m_zVelSlider.DrawObject(modelLoc, colorLoc);
+	//m_selectedIndicator.SetPosition(m_menuPosition.x - (selectedX * halfHeight),
+	//								m_menuPosition.y + (0.9f * halfHeight));
+	//m_selectedIndicator.Update(delta);
+	//m_selectedIndicator.DrawObject(modelLoc, colorLoc);
 	
 	++m_timer;
 	++m_timer2;
@@ -193,33 +205,30 @@ void Menu::SwapSliderColors()
 float SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, 
 					 int projLoc, float width, float height, Camera& camera)
 {
-	float aspect = (float)width / (float)height;
+	float aspect = width / height;
 
+	// scared to update this since adding 3D, things may hinge on finding a correct half height?
+	// I think the menu, thats the next thing to fix.
 	if (aspect >= 1.0f)
 	{
-		worldLeft = -aspect;
-		worldRight = aspect;
-		worldBottom = -1.0f;
-		worldTop = 1.0f;
+		worldLeft = -aspect; worldRight = aspect; worldBottom = -1.0f; worldTop = 1.0f;
 	}
 	else
 	{
-		worldLeft = -1.0f;
-		worldRight = 1.0f;
-		worldBottom = -1.0f / aspect;
-		worldTop = 1.0f / aspect;
+		worldLeft = -1.0f; worldRight = 1.0f; worldBottom = -1.0f / aspect; worldTop = 1.0f / aspect;
 	}
 
 	float centerX = (worldLeft + worldRight) / 2.0f;
 	float centerY = (worldBottom + worldTop) / 2.0f;
-	float halfWidth = (worldRight - worldLeft) / 2.0f / camera.GetZoom();
-	float halfHeight = (worldTop - worldBottom) / 2.0f / camera.GetZoom();
+	float halfWidth = (worldRight - worldLeft) / 2.0f / camera.GetRadius() / 3;
+	float halfHeight = (worldTop - worldBottom) / 2.0f / camera.GetRadius() / 3;
 
 	worldLeft = centerX - halfWidth;
 	worldRight = centerX + halfWidth;
 	worldBottom = centerY - halfHeight;
 	worldTop = centerY + halfHeight;
 
+	// use perspective for true 3d rendering -- changed from glm::ortho 
 	glm::mat4 projection = glm::perspective(
 		glm::radians(45.0f),
 		aspect,

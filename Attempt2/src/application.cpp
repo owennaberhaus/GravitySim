@@ -70,14 +70,13 @@ int main(void)
     // initialize shaders (shader.h)
     unsigned int shader = CreateShader();
     glUseProgram(shader);
+    // TODO :: create a genuniform function 
     int modelLoc = glGetUniformLocation(shader, "u_model"); // allows a translation matrix
     int colorLoc = glGetUniformLocation(shader, "u_color"); // accesses a glm::vec3 of rgb color
     int projLoc = glGetUniformLocation(shader, "u_projection"); // basically allows window scaling 
     int viewLoc = glGetUniformLocation(shader, "u_view"); // allows camera movement
     int width, height; // used for projection matrix scaling
     float worldLeft, worldRight, worldBottom, worldTop; // absolute positions of window
-
-
 
     std::vector<std::unique_ptr<Object>> objects{};
     objects.reserve(20);
@@ -110,12 +109,13 @@ int main(void)
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
         float halfHeight = SolveProjection(worldLeft, worldRight, worldBottom, worldTop, projLoc, width, height, camera);  
-
+        std::cout << width << '\n';
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
-        float worldX = worldLeft + (xpos / width) * (worldRight - worldLeft);
+        float worldX = worldLeft + (xpos / width) * (worldRight - worldLeft); // should move these to some other function
         float worldY = worldTop - (ypos / height) * (worldTop - worldBottom);
-        clicker.MouseControl(window, worldX, worldY, objects, menu, g_scrollDelta, camera);
+        std::cout << worldY << '\n';
+        clicker.MouseControl(window, worldX / camera.GetRadius(), worldY / camera.GetRadius(), objects, menu, g_scrollDelta, camera);
         menu.ToggleGravityAndInitVel(window);
         
         ApplyGravity2(objects, deltaTime, menu);
