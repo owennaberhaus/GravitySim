@@ -40,28 +40,27 @@ void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, GLFWwindow* window, flo
 	else
 		selectedX = -0.9f;
 
-	m_selectedIndicator.SetPosition(m_camera->GetPosition().x - (selectedX * halfHeight), 
-									m_camera->GetPosition().y + (0.9f * halfHeight));
-	m_selectedIndicator.Update(delta);
-	m_selectedIndicator.DrawObject(modelLoc, colorLoc);
-	m_xVelSlider.SetPosition(m_camera->GetPosition().x - (0.7f * halfHeight), 
-							 m_camera->GetPosition().y + (0.9f * halfHeight));
+	
+	m_xVelSlider.SetPosition(m_camera->GetPosition2().x - (0.7f * halfHeight), 
+							 m_camera->GetPosition2().y + (0.9f * halfHeight));
 	m_xVelSlider.Update(delta);
 	m_xVelSlider.DrawObject(modelLoc, colorLoc);
-	//m_massSlider.SetPosition(m_camera->GetPosition().x,
-	//						 m_camera->GetPosition().y + (0.9f * halfHeight));
-	m_massSlider.SetPosition(m_camera->GetPosition().x,
-		m_camera->GetPosition().y + (0.9f * halfHeight));
+	m_massSlider.SetPosition(m_camera->GetPosition2().x,
+		m_camera->GetPosition2().y + (0.9f * halfHeight));
 	m_massSlider.Update(delta);
 	m_massSlider.DrawObject(modelLoc, colorLoc);
-	m_yVelSlider.SetPosition(m_camera->GetPosition().x + (0.7f * halfHeight),
-							 m_camera->GetPosition().y + (0.9f * halfHeight));
+	m_yVelSlider.SetPosition(m_camera->GetPosition2().x + (0.7f * halfHeight),
+							 m_camera->GetPosition2().y + (0.9f * halfHeight));
 	m_yVelSlider.Update(delta);
 	m_yVelSlider.DrawObject(modelLoc, colorLoc);
-	m_zVelSlider.SetPosition(m_camera->GetPosition().x + (0.9f * halfHeight),
-		m_camera->GetPosition().y + (0.9f * halfHeight));
+	m_zVelSlider.SetPosition(m_camera->GetPosition2().x + (0.9f * halfHeight),
+		m_camera->GetPosition2().y + (0.9f * halfHeight));
 	m_zVelSlider.Update(delta);
 	m_zVelSlider.DrawObject(modelLoc, colorLoc);
+	m_selectedIndicator.SetPosition(m_camera->GetPosition2().x - (selectedX * halfHeight),
+		m_camera->GetPosition2().y + (0.9f * halfHeight));
+	m_selectedIndicator.Update(delta);
+	m_selectedIndicator.DrawObject(modelLoc, colorLoc);
 	
 	++m_timer;
 	++m_timer2;
@@ -221,7 +220,12 @@ float SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, f
 	worldBottom = centerY - halfHeight;
 	worldTop = centerY + halfHeight;
 
-	glm::mat4 projection = glm::ortho(worldLeft, worldRight, worldBottom, worldTop);
+	glm::mat4 projection = glm::perspective(
+		glm::radians(45.0f),
+		aspect,
+		0.1f,
+		100.0f
+	);
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 	return halfHeight;

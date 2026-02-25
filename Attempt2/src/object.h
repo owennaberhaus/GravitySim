@@ -60,8 +60,11 @@ public:
     void SetVel(float x, float y, float z = 0) { m_velX = x; m_velY = y; m_velZ = z; }
     void IncMass(float val) { m_mass += val; }
 
-    void UpdatePath() { m_path.UpdateVertices(m_posX, m_posY); }
-    void DrawPath(int modelLoc, int colorLoc) { m_path.DrawPath(modelLoc, colorLoc); }
+    void UpdatePath() { m_path.UpdateVertices(m_posX, m_posY, m_posZ); }
+    void DrawPath(int modelLoc, int colorLoc) {
+        glm::mat4 identity = glm::mat4(1.0f);
+        m_path.DrawPath(modelLoc, colorLoc, identity);
+    }
 
 private:
     float m_mass{}; // will impact how large the object looks and acts
@@ -78,7 +81,7 @@ private:
     glm::vec3 m_color;
     bool m_exertsGravity{ true };
 
-    Path m_path{ 0.005f, m_posX, m_posY, glm::vec3(1.0f, 1.0f, 1.0f) };
+    Path m_path{ 0.005f, m_posX, m_posY, m_posZ, glm::vec3(1.0f, 1.0f, 1.0f) };
 
 
 };

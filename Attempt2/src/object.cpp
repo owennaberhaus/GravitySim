@@ -5,12 +5,23 @@ void Object::GenCircleVertices(int segments)
 {
     m_vertices.push_back(0.0f);
     m_vertices.push_back(0.0f);
+	m_vertices.push_back(0.0f);
     for (auto i{ 0 }; i <= segments; ++i) {
-        float angle = (2 * static_cast<float>(M_PI)) * i / segments;
-        m_vertices.push_back(cos(angle));
-        m_vertices.push_back(sin(angle));
+        float phi = M_PI * i / segments;
+        for (auto j{ 0 }; j < segments; ++j) { 
+            float theta = (2 * static_cast<float>(M_PI)) * j / segments;
+
+            // SPHEREICALNCOORDINATEC CALLSSC # CALC ##333!!!N!111!!
+            float x = sin(phi) * cos(theta);
+            float y = sin(phi) * sin(theta);
+            float z = cos(phi);
+
+            m_vertices.push_back(x);
+            m_vertices.push_back(y);
+			m_vertices.push_back(z);
+        }
     }
-    vertexCount = m_vertices.size() / 2; // each vertex has 2 points (x,y)
+    vertexCount = m_vertices.size() / 3; // each vertex has 3 points (x,y,z)
 
     // generate and bind VAO // VBO
     glGenVertexArrays(1, &VAO);
@@ -22,10 +33,10 @@ void Object::GenCircleVertices(int segments)
 
     glVertexAttribPointer(
         0,                // location in shader
-        2,                // 2 floats per vertex (x,y)
+        3,                // 2 floats per vertex (x,y)
         GL_FLOAT,
         GL_FALSE,
-        2 * sizeof(float), // stride
+        3 * sizeof(float), // stride
         (void*)0
     );
     glEnableVertexAttribArray(0);
@@ -79,7 +90,7 @@ void Object::DrawObject(int modelLoc, int colorLoc) {
 
     glBindVertexArray(VAO);
     // glDrawArrays(GL_TRIANGLE_FAN, 0, vertexCount);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, vertexCount);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, vertexCount);
     glBindVertexArray(0);
 
 

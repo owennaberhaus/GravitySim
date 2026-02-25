@@ -35,14 +35,33 @@ public:
 	glm::vec3 GetPosition() { return m_position; }
 	const float GetZoom() { return m_zoom; }
 
-	void IncZoom(float amount) {
-		m_zoom += amount / 25;
-		if (m_zoom < 0.1f) m_zoom = 0.1f; // prevent zooming in too much
-		if (m_zoom > 10.0f) m_zoom = 10.0f; // prevent zooming out too much
-	}
+	// depricated zoom method
+	//void IncZoom(float amount) {
+	//	m_zoom += amount / 25;
+	//	if (m_zoom < 0.1f) m_zoom = 0.1f; // prevent zooming in too much
+	//	if (m_zoom > 10.0f) m_zoom = 10.0f; // prevent zooming out too much
+	//}
+	void IncZoom(float amount) { m_radius > 0.01f ? m_radius -= amount : m_radius = 0.0f; }
+
+	void catchMouseMovement(GLFWwindow* window);
+	glm::vec3 GetPosition2() { return m_position2; }
 
 private:
-	glm::vec3 m_position{ 0.0f, 0.0f, 0.0f };
+	glm::vec3 m_position = glm::vec3(0.0f, 0.0f, 5.0f);
+	glm::vec3 m_position2{ 3.0f, 0.0f, 3.0f }; 
+	glm::vec3 m_target = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 m_direction = glm::normalize(m_position - m_target);
+
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 m_cameraRight = glm::normalize(glm::cross(up, m_direction));
+	glm::vec3 cameraUp = glm::cross(m_direction, m_cameraRight);
+	
+	float m_radius = 3.0f;
+	float m_zx{ 0.0f };
+	float m_yz{ 0.0f };
+
+
+
 	// TODO
 	float m_zoom{ 1.0f };
 	float m_rotation{ 0.0f };

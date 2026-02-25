@@ -40,9 +40,9 @@ public:
 private:
 
 	Object m_massSlider       {  0.0f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
-	Object m_xVelSlider       { -0.7f, 0.9f, 0.2f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
-	Object m_yVelSlider       {  0.7f, 0.9f, 0.2f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
-	Object m_zVelSlider       {  0.9f, 0.9f, 0.2f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object m_xVelSlider       { -0.7f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object m_yVelSlider       {  0.7f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object m_zVelSlider       {  0.9f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
 	Object* selectedSlider{ &m_massSlider };
 	Object m_selectedIndicator{  0.0f, 0.0f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.013f, false, glm::vec3(1.0f, 1.0f, 1.0f), false};
 

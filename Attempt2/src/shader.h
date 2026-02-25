@@ -4,7 +4,7 @@
 std::string vertexShader =
 "#version 330 core\n"
 "\n"
-"layout(location = 0) in vec2 position;"
+"layout(location = 0) in vec3 position;"
 "\n"
 "uniform mat4 u_model;\n"
 "uniform mat4 u_projection;\n"
@@ -12,7 +12,7 @@ std::string vertexShader =
 "\n"
 "void main()\n"
 "{\n"
-"    gl_Position = u_projection * u_view * u_model * vec4(position, 0.0, 1.0);\n"
+"    gl_Position = u_projection * u_view * u_model * vec4(position, 1.0);\n"
 "}\n";
 
 std::string fragmentShader =

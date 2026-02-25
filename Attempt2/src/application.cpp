@@ -63,6 +63,10 @@ int main(void)
     if (glewInit() != GLEW_OK)
         std::cout << "Glew initialization failed" << '\n';
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // lighten background slightly
+
     // initialize shaders (shader.h)
     unsigned int shader = CreateShader();
     glUseProgram(shader);
@@ -98,7 +102,7 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         float deltaTime = timer.delta();
         camera.Update(window);
@@ -113,22 +117,17 @@ int main(void)
         float worldY = worldTop - (ypos / height) * (worldTop - worldBottom);
         clicker.MouseControl(window, worldX, worldY, objects, menu, g_scrollDelta, camera);
         menu.ToggleGravityAndInitVel(window);
-
         
         ApplyGravity2(objects, deltaTime, menu);
-
         // update state for all rendered objects
         for (auto& obj : objects)
         {
-            obj->UpdatePath();
-            obj->DrawPath(modelLoc, colorLoc);
             obj->Update(deltaTime);
             obj->DrawObject(modelLoc, colorLoc);
-            if(obj->GetMovable())
-                std::cout << obj->GetPosZ() << " | ";
+            obj->UpdatePath();
+            obj->DrawPath(modelLoc, colorLoc);
         }
-        if(objects.size() > 0)
-            std::cout << '\n';
+
         menu.UpdateAndDrawMenu(modelLoc, colorLoc, window, deltaTime, halfHeight);
 
         /* Swap front and back buffers */
