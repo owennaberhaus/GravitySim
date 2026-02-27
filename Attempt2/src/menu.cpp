@@ -25,72 +25,72 @@ int Menu::CheckSelected()
 		return 4;
 }
 
-void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, GLFWwindow* window, float delta, float halfHeight)
+void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, int projLoc2D,  GLFWwindow* window, float delta, float halfHeight, float width, float height)
 {
+	glDisable(GL_DEPTH_TEST); // disable depth testing for 2d rendering
+
 	m_selectedIndicator.SetMass(selectedSlider->GetMass() + 0.01f);
 	SwapSliderColors();
 
 	float selectedX;
 	if (CheckSelected() == 1)
-		selectedX = 0.7f;
+		selectedX = m_yVelSlider.GetPosX();
 	else if (CheckSelected() == 2)
-		selectedX = 0.0f;
+		selectedX = m_xVelSlider.GetPosX();
 	else if (CheckSelected() == 3)
-		selectedX = -0.7f;
+		selectedX = m_zVelSlider.GetPosX();
 	else
-		selectedX = -0.9f;
+		selectedX = m_massSlider.GetPosX();
 
 	glm::vec3 camera = m_camera->GetPosition();
 	glm::vec3 target = m_camera->GetTarget();
 
 	glm::vec3 forward = glm::normalize(target - camera);
-	float distance = 2.0f; // how far in front of camera
+	float distance = m_camera->GetRadius() * 0.5f; // how far in front of camera
 
 	glm::vec3 midpoint = camera + forward * distance;
 
-	float heightOffset = 2.0f * halfHeight;
+	float heightOffset = 5.0f * halfHeight;
 
-	//m_xVelSlider.SetPosition(m_menuPosition.x - (0.7f * halfHeight), 
-	//	m_menuPosition.y + (0.9f * halfHeight));
-	//m_xVelSlider.Update(delta);
-	//m_xVelSlider.DrawObject(modelLoc, colorLoc);
-	m_massSlider.SetPosition(
-		midpoint.x + m_camera->GetUp().x * heightOffset,
-		midpoint.y + m_camera->GetUp().y * heightOffset,
-		midpoint.z + m_camera->GetUp().z * heightOffset
+	float aspect = width / height;
+	glm::mat4 hudProjection = glm::ortho(
+		-aspect, aspect,
+		-1.0f, 1.0f,
+		-1.0f, 1.0f
 	);
+
+	glUniformMatrix4fv(projLoc2D, 1, GL_FALSE, glm::value_ptr(hudProjection));
+
+	m_xVelSlider.Update(delta);
+	m_xVelSlider.DrawObject(modelLoc, colorLoc);
 	m_massSlider.Update(delta);
 	m_massSlider.DrawObject(modelLoc, colorLoc);
-	//m_yVelSlider.SetPosition(m_menuPosition.x + (0.7f * halfHeight),
-	//						 m_menuPosition.y + (0.9f * halfHeight));
-	//m_yVelSlider.Update(delta);
-	//m_yVelSlider.DrawObject(modelLoc, colorLoc);
-	//m_zVelSlider.SetPosition(m_menuPosition.x + (0.9f * halfHeight),
-	//						 m_menuPosition.y + (0.9f * halfHeight));
-	//m_zVelSlider.Update(delta);
-	//m_zVelSlider.DrawObject(modelLoc, colorLoc);
-	//m_selectedIndicator.SetPosition(m_menuPosition.x - (selectedX * halfHeight),
-	//								m_menuPosition.y + (0.9f * halfHeight));
-	//m_selectedIndicator.Update(delta);
-	//m_selectedIndicator.DrawObject(modelLoc, colorLoc);
+	m_yVelSlider.Update(delta);
+	m_yVelSlider.DrawObject(modelLoc, colorLoc);
+	m_zVelSlider.Update(delta);
+	m_zVelSlider.DrawObject(modelLoc, colorLoc);
+	m_selectedIndicator.Update(delta);
+	m_selectedIndicator.DrawObject(modelLoc, colorLoc);
 	
 	++m_timer;
 	++m_timer2;
 	++m_timer3;
 	++m_timer4;
 	UpdateSelected(window);
+
+	glEnable(GL_DEPTH_TEST); // re-enable depth testing for 3d rendering next loop
 }
 
 void Menu::IncSelectedRight()
 {
-	if (selectedSlider == &m_xVelSlider)
+	if (selectedSlider == &m_zVelSlider)
 		selectedSlider = &m_massSlider;
 	else if (selectedSlider == &m_massSlider)
-		selectedSlider = &m_yVelSlider;
+		selectedSlider = &m_xVelSlider;
 	else if (selectedSlider == &m_yVelSlider)
 		selectedSlider = &m_zVelSlider;
 	else
-		selectedSlider = &m_xVelSlider;
+		selectedSlider = &m_yVelSlider;
 
 	m_selectedIndicator.SetPosX(selectedSlider->GetPosX());
 	m_selectedIndicator.SetPosY(selectedSlider->GetPosY());
@@ -100,11 +100,11 @@ void Menu::IncSelectedRight()
 void Menu::IncSelectedLeft()
 {
 	if (selectedSlider == &m_xVelSlider)
-		selectedSlider = &m_zVelSlider;
-	else if (selectedSlider == &m_massSlider)
-		selectedSlider = &m_xVelSlider;
-	else if (selectedSlider == &m_yVelSlider)
 		selectedSlider = &m_massSlider;
+	else if (selectedSlider == &m_massSlider)
+		selectedSlider = &m_zVelSlider;
+	else if (selectedSlider == &m_yVelSlider)
+		selectedSlider = &m_xVelSlider;
 	else
 		selectedSlider = &m_yVelSlider;
 
@@ -162,7 +162,8 @@ void Menu::UpdateSelected(GLFWwindow* window)
 		m_timer4 = 0;
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && m_timer2 > 20 && (selectedSlider == &m_xVelSlider || selectedSlider == &m_yVelSlider))
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && m_timer2 > 20 && 
+		(selectedSlider == &m_xVelSlider || selectedSlider == &m_yVelSlider || selectedSlider == &m_zVelSlider))
 	{
 		if (m_xPositive && selectedSlider == &m_xVelSlider)
 			m_xPositive = false;

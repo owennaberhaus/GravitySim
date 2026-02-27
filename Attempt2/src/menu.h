@@ -18,7 +18,7 @@ public:
 	Menu(Camera& camera);
 	~Menu();
 
-	void UpdateAndDrawMenu(int modelLoc, int colorLoc, GLFWwindow* window, float delta, float halfHeight);
+	void UpdateAndDrawMenu(int modelLoc, int colorLoc, int projLoc2D, GLFWwindow* window, float delta, float halfHeight, float width, float height);
 	void ToggleGravityAndInitVel(GLFWwindow* window);
 	
 
@@ -39,10 +39,10 @@ public:
 
 private:
 
-	Object m_massSlider       {  0.0f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
-	Object m_xVelSlider       { -0.7f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
-	Object m_yVelSlider       {  0.7f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
-	Object m_zVelSlider       {  0.9f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object m_massSlider       { -0.9f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.5f, 0.8f, 1.0f), false };
+	Object m_xVelSlider       { -0.6f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object m_yVelSlider       { -0.3f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
+	Object m_zVelSlider       {  0.0f, 0.9f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.010f, false, glm::vec3(0.7f, 0.8f, 0.2f), false };
 	Object* selectedSlider{ &m_massSlider };
 	Object m_selectedIndicator{  0.0f, 0.0f, 0.0f, 0.00000f, 0.00000f, 0.0f, 0.013f, false, glm::vec3(1.0f, 1.0f, 1.0f), false};
 

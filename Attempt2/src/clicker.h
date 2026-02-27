@@ -9,11 +9,13 @@ class Clicker {
 public:
     void DeleteObjects(std::vector<std::unique_ptr<Object>>& objects, GLFWwindow* window, float worldX, float worldY, Camera& camera)
     {
+        glm::vec3 deletePos = GetSpawnPositionOnPlane(worldX, worldY, camera, 1.0f) * static_cast<float>(pow(camera.GetRadius(), 3) * 1.25);
+
         for (size_t i{ 0 }; i < objects.size(); ++i)
         {
             float distanceMTO = static_cast<float>(sqrt
-            (pow((objects[i]->GetPosX() - (worldX + camera.GetPosition().x)), 2))
-                + pow((objects[i]->GetPosY() - (worldY + camera.GetPosition().y)), 2)); //mouse to object
+            (pow((objects[i]->GetPosX() - deletePos.x), 2))
+                + pow((objects[i]->GetPosY() - deletePos.y), 2)); //mouse to object
             if (distanceMTO < (objects[i]->GetMass() + 0.01) && glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
             {
                 objects.erase(objects.begin() + i);
@@ -28,7 +30,7 @@ public:
         ++m_framesSinceClick;
 
         /*catch where*/
-        glm::vec3 spawnPos = GetSpawnPositionOnPlane(worldX, worldY, camera, 1.0f) * static_cast<float>(pow(camera.GetRadius(), 3));
+        glm::vec3 spawnPos = GetSpawnPositionOnPlane(worldX, worldY, camera, 1.0f) * static_cast<float>(pow(camera.GetRadius(), 3) * 1.25);
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && m_framesSinceClick > 30)
         {
             objects.push_back(std::make_unique<Object>(spawnPos.x, spawnPos.y, spawnPos.z, 0.0f, 0.0f, 0.0f, menu.GetMass(), false, glm::vec3(0.5f, 0.5f, 0.5f)));

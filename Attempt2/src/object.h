@@ -1,6 +1,7 @@
 #pragma once
 
-#define M_G 1 // gravitational constant - adjust as needed for visual effect
+
+extern float M_G; // gravitational constant - adjust as needed for visual effect
 #define M_PI 3.1415926535897932384626433
 
 #include <glew.h>
@@ -38,6 +39,7 @@ public:
     void Update(float delta);
 
     void UpdateSize();
+    void Move(glm::vec3 distance) { SetPosition(GetPosX() + distance.x, GetPosY() + distance.y, GetPosZ() + distance.z); }
 
     const float GetPosX() { return m_posX; }
     const float GetPosY() { return m_posY; }
@@ -90,3 +92,5 @@ private:
 void ApplyGravity(Object& one, Object& two, float delta, Menu& menu);
 
 void ApplyGravity2(std::vector<std::unique_ptr<Object>>& objects, float delta, Menu& menu);
+
+void IncrementGravity(GLFWwindow* window, int& timer);

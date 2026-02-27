@@ -1,6 +1,9 @@
 #include "object.h"
 #include "menu.h" 
 
+float M_G{ 0.5f }; // gravitational constant - adjust as needed for visual effect
+
+
 void Object::GenCircleVertices(int segments)
 {
     m_vertices.push_back(0.0f);
@@ -90,7 +93,7 @@ void Object::DrawObject(int modelLoc, int colorLoc) {
 
     glBindVertexArray(VAO);
     // glDrawArrays(GL_TRIANGLE_FAN, 0, vertexCount);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, vertexCount);
+    glDrawArrays(GL_POINTS, 0, vertexCount);
     glBindVertexArray(0);
 
 
@@ -116,9 +119,10 @@ void Object::UpdateSize()
 
 // non member functions
 
+
+
 void ApplyGravity(Object& one, Object& two, float delta, Menu& menu)
 {
-
     float tx = std::abs(one.GetPosX() - two.GetPosX());
     float ty = std::abs(one.GetPosY() - two.GetPosY());
 	float tz = std::abs(one.GetPosZ() - two.GetPosZ());
@@ -167,47 +171,55 @@ void ApplyGravity(Object& one, Object& two, float delta, Menu& menu)
         // ---- CASE 2: both movable (proper 2D elastic collision) ----
         else if (one.GetMovable() && two.GetMovable())
         {
-            glm::vec3 relativeVel = vel1 - vel2; // Relative velocity
+            glm::vec3 diff = pos2 - pos1;
+            float dist = glm::length(diff);
+            if (dist == 0.0f) return;
 
-            // Velocity along collision normal
+            glm::vec3 normal = diff / dist;
+
+            glm::vec3 relativeVel = vel1 - vel2;
             float velAlongNormal = glm::dot(relativeVel, normal);
 
-            if (velAlongNormal > 0.0f) // If objects are separating, do nothing
+            if (velAlongNormal > 0.0f)
                 return;
 
-			float restitution = 1.0f; // elasticity (1 is perfectly elastic)
+            float restitution = 1.0f;
 
-            // Compute impulse scalar
             float j = -(1.0f + restitution) * velAlongNormal;
             j /= (1.0f / m1 + 1.0f / m2);
 
-            glm::vec3 impulse = j * normal; // Apply impulse
+            glm::vec3 impulse = j * normal;
 
-            glm::vec3 newVel1 = vel1 + impulse / m1;
-            glm::vec3 newVel2 = vel2 - impulse / m2;
+            one.SetVel(
+                vel1.x + impulse.x / m1,
+                vel1.y + impulse.y / m1,
+                vel1.z + impulse.z / m1
+            );
 
-            one.SetVel(newVel1.x, newVel1.y, newVel1.z);
-            two.SetVel(newVel2.x, newVel2.y, newVel2.z);
+            two.SetVel(
+                vel2.x - impulse.x / m2,
+                vel2.y - impulse.y / m2,
+                vel2.z - impulse.z / m2
+            );
+
+            // ---- Proper position correction ----
+            float overlap = (one.GetMass() + two.GetMass()) - dist;
+            if (overlap > 0.0f)
+            {
+                float percent = 0.8f;
+                float slop = 0.01f;
+
+                glm::vec3 correction = normal * percent *
+                    std::max(overlap - slop, 0.0f) /
+                    (1.0f / m1 + 1.0f / m2);
+
+                pos1 -= correction / m1;
+                pos2 += correction / m2;
+
+                one.SetPosition(pos1.x, pos1.y, pos1.z);
+                two.SetPosition(pos2.x, pos2.y, pos2.z);
+            }
         }
-
-        // ---- Position correction (prevents sticking) ----
-    //    float overlap = (m1 + m2) - radius;
-    //    if (overlap > 0.0f)
-    //    {
-    //        glm::vec3 correction = normal * (overlap * 0.5f);
-
-    //        if (one.GetMovable())
-    //        {
-				//one.SetVel(-one.GetVelX(), -one.GetVelY(), -one.GetVelZ()); // reverse velocity to prevent sticking
-
-    //        }
-
-    //        if (two.GetMovable())
-    //        {
-    //            two.SetVel(-two.GetVelX(), -two.GetVelY(), -two.GetVelZ()); // reverse velocity to prevent sticking
-
-    //        }
-    //    }
     }
 
 }
@@ -220,4 +232,16 @@ void ApplyGravity2(std::vector<std::unique_ptr<Object>>& objects, float delta, M
             ApplyGravity(*objects[i], *objects[k], delta, menu);
         }
     }
+}
+
+void IncrementGravity(GLFWwindow* window, int& timer) {
+    if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS && GLFW_MOD_SHIFT && timer > 10) {
+        M_G += 0.1f;
+        timer = 0;
+    }
+    if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS && timer > 10) {
+        M_G -= 0.1f;
+        timer = 0;
+    }
+    timer++;
 }

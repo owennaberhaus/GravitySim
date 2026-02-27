@@ -19,7 +19,22 @@
 #include "clicker.h"
 #include "camera.h"
 
+int togglePathsTimer{ 0 };
+int gravTimer{ 0 };
+
+bool flag_drawPaths{ true }; // whether to draw the paths of the objects
+
 float g_scrollDelta{ 0 };
+
+static void TogglePaths(GLFWwindow* window, int& timer)
+{
+    ++timer;
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && timer > 10) {
+        flag_drawPaths = !flag_drawPaths;
+        timer = 0;
+    }
+
+}
 
 static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
@@ -69,12 +84,20 @@ int main(void)
 
     // initialize shaders (shader.h)
     unsigned int shader = CreateShader();
-    glUseProgram(shader);
+	unsigned int shader2D = CreateShader2D();
     // TODO :: create a genuniform function 
+    // 3D uniforms
     int modelLoc = glGetUniformLocation(shader, "u_model"); // allows a translation matrix
     int colorLoc = glGetUniformLocation(shader, "u_color"); // accesses a glm::vec3 of rgb color
     int projLoc = glGetUniformLocation(shader, "u_projection"); // basically allows window scaling 
     int viewLoc = glGetUniformLocation(shader, "u_view"); // allows camera movement
+
+    // 2D uniforms
+    int modelLoc2D = glGetUniformLocation(shader2D, "u_model");
+    int colorLoc2D = glGetUniformLocation(shader2D, "u_color");
+    int projLoc2D = glGetUniformLocation(shader2D, "u_projection");
+
+
     int width, height; // used for projection matrix scaling
     float worldLeft, worldRight, worldBottom, worldTop; // absolute positions of window
 
@@ -91,11 +114,14 @@ int main(void)
     Menu menu(camera);
      
     std::cout << "right click to spawn in a movable object, left click for immovable\n" <<
-        "Masses will be equal to the MIDDLE reference object\n" <<
-        "Left reference object is x velocity, right is y velocity\n" <<
+        "Masses will be equal to the leftmost (blue) reference object\n" <<
+        "second reference object is initial x velocity, then initial y velocity and finally initial z\n" <<
         "Green means positive velocity while red means negative\n" <<
         "Arrow keys to switch reference object, scroll to resize\n" << 
-        "'B' to flip sign, 'G' to turn off gravity, 'V' to toggle initial velocities\n";
+        "'B' to flip init vel sign, 'G' to turn off gravity, 'V' to toggle initial velocities\n" <<
+        "WASD to move camera, scroll wheel to zoom in and out\n" << 
+        "+ and - to increase and reduce the gravitational constant\n" <<
+        "objects will spawn on the plane normal to the camera direciton, that crosses (0, 0, 0)";
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -103,33 +129,43 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        TogglePaths(window, togglePathsTimer);
+
         float deltaTime = timer.delta();
         camera.Update(window);
 
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
         float halfHeight = SolveProjection(worldLeft, worldRight, worldBottom, worldTop, projLoc, width, height, camera);  
-        std::cout << width << '\n';
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
         float worldX = worldLeft + (xpos / width) * (worldRight - worldLeft); // should move these to some other function
         float worldY = worldTop - (ypos / height) * (worldTop - worldBottom);
-        std::cout << worldY << '\n';
         clicker.MouseControl(window, worldX / camera.GetRadius(), worldY / camera.GetRadius(), objects, menu, g_scrollDelta, camera);
         menu.ToggleGravityAndInitVel(window);
+
+        glUseProgram(shader2D);
+        menu.UpdateAndDrawMenu(modelLoc2D, colorLoc2D, projLoc2D, window, deltaTime, halfHeight, width, height);
         
         ApplyGravity2(objects, deltaTime, menu);
+        glUseProgram(shader);
         // update state for all rendered objects
+        if (flag_drawPaths)
+        {
+            for (auto& obj : objects)
+            {
+                obj->UpdatePath();
+                obj->DrawPath(modelLoc, colorLoc);
+            }
+        }
         for (auto& obj : objects)
         {
             obj->Update(deltaTime);
             obj->DrawObject(modelLoc, colorLoc);
-            obj->UpdatePath();
-            obj->DrawPath(modelLoc, colorLoc);
         }
+		
 
-        menu.UpdateAndDrawMenu(modelLoc, colorLoc, window, deltaTime, halfHeight);
-
+        IncrementGravity(window, gravTimer);
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
