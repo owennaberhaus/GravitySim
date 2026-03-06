@@ -1,5 +1,8 @@
 #include "menu.h"
 
+extern float g_scrollDelta{ 0 }; // used for scroll input, made global so 
+// evrything will be aware of how much scroll since last frame
+
 Menu::Menu(Camera& camera) : 
 	m_camera(&camera)
 {
@@ -25,7 +28,7 @@ int Menu::CheckSelected()
 		return 4;
 }
 
-void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, int projLoc2D,  GLFWwindow* window, float delta, float halfHeight, float width, float height)
+void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, int projLoc2D,  GLFWwindow* window, float delta, float width, float height)
 {
 	glDisable(GL_DEPTH_TEST); // disable depth testing for 2d rendering
 
@@ -42,16 +45,6 @@ void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, int projLoc2D,  GLFWwin
 	else
 		selectedX = m_massSlider.GetPosX();
 
-	glm::vec3 camera = m_camera->GetPosition();
-	glm::vec3 target = m_camera->GetTarget();
-
-	glm::vec3 forward = glm::normalize(target - camera);
-	float distance = m_camera->GetRadius() * 0.5f; // how far in front of camera
-
-	glm::vec3 midpoint = camera + forward * distance;
-
-	float heightOffset = 5.0f * halfHeight;
-
 	float aspect = width / height;
 	glm::mat4 hudProjection = glm::ortho(
 		-aspect, aspect,
@@ -61,21 +54,20 @@ void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, int projLoc2D,  GLFWwin
 
 	glUniformMatrix4fv(projLoc2D, 1, GL_FALSE, glm::value_ptr(hudProjection));
 
-	m_xVelSlider.Update(delta);
+	m_xVelSlider.Update(delta, window);
 	m_xVelSlider.DrawObject(modelLoc, colorLoc);
-	m_massSlider.Update(delta);
+	m_massSlider.Update(delta, window);
 	m_massSlider.DrawObject(modelLoc, colorLoc);
-	m_yVelSlider.Update(delta);
+	m_yVelSlider.Update(delta, window);
 	m_yVelSlider.DrawObject(modelLoc, colorLoc);
-	m_zVelSlider.Update(delta);
+	m_zVelSlider.Update(delta, window);
 	m_zVelSlider.DrawObject(modelLoc, colorLoc);
-	m_selectedIndicator.Update(delta);
+	m_selectedIndicator.Update(delta, window);
 	m_selectedIndicator.DrawObject(modelLoc, colorLoc);
-	
-	++m_timer;
-	++m_timer2;
-	++m_timer3;
-	++m_timer4;
+	m_timer += delta;
+	m_timer2 += delta;
+	m_timer3 += delta;
+	m_timer4 += delta;
 	UpdateSelected(window);
 
 	glEnable(GL_DEPTH_TEST); // re-enable depth testing for 3d rendering next loop
@@ -115,23 +107,23 @@ void Menu::IncSelectedLeft()
 
 void Menu::ToggleGravityAndInitVel(GLFWwindow* window)
 {
-	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS && m_timer3 > 20 && m_gravitySwitch)
+	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS && m_timer3 > 0.2 && m_gravitySwitch)
 	{
 		m_gravitySwitch = false;
 		m_timer3 = 0;
 	}
-	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS && m_timer3 > 20 && !m_gravitySwitch)
+	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS && m_timer3 > 0.2 && !m_gravitySwitch)
 	{
 		m_gravitySwitch = true;
 		m_timer3 = 0;
 	}
 	// initial velocity
-	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS && m_timer3 > 20 && m_initVelSwitch)
+	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS && m_timer3 > 0.2 && m_initVelSwitch)
 	{
 		m_initVelSwitch = false;
 		m_timer3 = 0;
 	}
-	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS && m_timer3 > 20 && !m_initVelSwitch)
+	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS && m_timer3 > 0.2 && !m_initVelSwitch)
 	{
 		m_initVelSwitch = true;
 		m_timer3 = 0;
@@ -140,29 +132,29 @@ void Menu::ToggleGravityAndInitVel(GLFWwindow* window)
 
 void Menu::UpdateSelected(GLFWwindow* window)
 {
-	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && m_timer > 20)
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && m_timer > 0.2)
 	{
 		IncSelectedRight();
 		m_timer = 0;
 	}
-	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && m_timer > 20)
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && m_timer > 0.2)
 	{
 		IncSelectedLeft();
 		m_timer = 0;
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && m_timer4 > 5)
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && m_timer4 > 0.1)
 	{
 		selectedSlider->IncMass( 0.005f);
 		m_timer4 = 0;
 	}
-	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && m_timer4 > 5 && selectedSlider->GetMass() > 0)
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && m_timer4 > 0.1 && selectedSlider->GetMass() > 0)
 	{
 		selectedSlider->IncMass(-0.005f);
 		m_timer4 = 0;
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && m_timer2 > 20 && 
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && m_timer2 > 0.2 && 
 		(selectedSlider == &m_xVelSlider || selectedSlider == &m_yVelSlider || selectedSlider == &m_zVelSlider))
 	{
 		if (m_xPositive && selectedSlider == &m_xVelSlider)
@@ -203,7 +195,7 @@ void Menu::SwapSliderColors()
 
 }
 
-float SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, 
+void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, 
 					 int projLoc, float width, float height, Camera& camera)
 {
 	float aspect = width / height;
@@ -237,6 +229,4 @@ float SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, f
 		100.0f
 	);
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-	return halfHeight;
 }

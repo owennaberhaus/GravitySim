@@ -1,7 +1,5 @@
 #pragma once
-
-
-extern float M_G; // gravitational constant - adjust as needed for visual effect
+extern float M_G; // gravitational constant that is changed with + / -
 #define M_PI 3.1415926535897932384626433
 
 #include <glew.h>
@@ -20,6 +18,7 @@ class Object
 {
 private:
     void GenCircleVertices(int segments);
+    void TogglePaths(GLFWwindow* window, float timer);
    
 public:
 
@@ -36,7 +35,7 @@ public:
 
     void DrawObject(int modelLoc, int colorLoc);
 
-    void Update(float delta);
+    void Update(float delta, GLFWwindow* window);
 
     void UpdateSize();
     void Move(glm::vec3 distance) { SetPosition(GetPosX() + distance.x, GetPosY() + distance.y, GetPosZ() + distance.z); }
@@ -62,10 +61,12 @@ public:
     void SetVel(float x, float y, float z = 0) { m_velX = x; m_velY = y; m_velZ = z; }
     void IncMass(float val) { m_mass += val; }
 
-    void UpdatePath() { m_path.UpdateVertices(m_posX, m_posY, m_posZ); }
+    void UpdatePath(GLFWwindow* window, float delta);
     void DrawPath(int modelLoc, int colorLoc) {
-        glm::mat4 identity = glm::mat4(1.0f);
-        m_path.DrawPath(modelLoc, colorLoc, identity);
+        if (m_drawPaths) {
+            glm::mat4 identity = glm::mat4(1.0f);
+            m_path.DrawPath(modelLoc, colorLoc, identity);
+        }
     }
 
 private:
@@ -84,6 +85,8 @@ private:
     bool m_exertsGravity{ true };
 
     Path m_path{ 0.005f, m_posX, m_posY, m_posZ, glm::vec3(1.0f, 1.0f, 1.0f) };
+	float m_pathTimer{ 0.0f };
+	bool m_drawPaths{ true };
 
 
 };
@@ -93,4 +96,4 @@ void ApplyGravity(Object& one, Object& two, float delta, Menu& menu);
 
 void ApplyGravity2(std::vector<std::unique_ptr<Object>>& objects, float delta, Menu& menu);
 
-void IncrementGravity(GLFWwindow* window, int& timer);
+void IncrementGravity(GLFWwindow* window, float deltaTime);

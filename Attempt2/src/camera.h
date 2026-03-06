@@ -16,7 +16,7 @@ private:
 	void HandleInput(GLFWwindow* window);
 
 	void UpdateViewMatrix();
-
+	void UpdateProjectionMatrix(int width, int height);
 
 
 public:
@@ -36,17 +36,12 @@ public:
 	const glm::vec3 GetPosition() { return m_position; }
 	const glm::vec3 GetTarget() { return m_target; }
 	const glm::vec3 GetUp() { return m_cameraUp; }
-	const float GetZoom() { return m_zoom; }
 	const float GetRadius() { return m_radius; }
+	const glm::vec3 GetDirection() { return m_direction; }
+	const glm::mat4& GetProjectionMatrix() const { return m_projection; }
+	const glm::mat4& GetViewMatrix() const { return m_view; }
 	
-
-	// depricated zoom method
-	//void IncZoom(float amount) {
-	//	m_zoom += amount / 25;
-	//	if (m_zoom < 0.1f) m_zoom = 0.1f; // prevent zooming in too much
-	//	if (m_zoom > 10.0f) m_zoom = 10.0f; // prevent zooming out too much
-	//}
-	void IncZoom(float amount) { m_radius > 0.01f ? m_radius -= amount : m_radius = 0.011f; }
+	void IncRadius(float amount) { m_radius > 0.01f ? m_radius -= amount : m_radius = 0.011f; }
 
 	void catchMouseMovement(GLFWwindow* window);
 	glm::vec3 GetPosition2() { return m_position2; }
@@ -61,13 +56,13 @@ private:
 	glm::vec3 m_cameraRight = glm::normalize(glm::cross(up, m_direction));
 	glm::vec3 m_cameraUp = glm::cross(m_direction, m_cameraRight);
 	
-	float m_radius = 3.0f;
-	float m_zx{ 0.0f };
-	float m_yz{ 0.0f };
+	glm::mat4 m_view{ 1.0f };
+	glm::mat4 m_projection{ 1.0f };
 
-	// TODO
-	float m_zoom{ 1.0f };
-	float m_rotation{ 0.0f };
+	float m_radius = 3.0f;
+	float m_zx{ 0.0f }; // theta (poorly named, ik)
+	float m_yz{ 0.0f }; // phi
+
 
 	float m_speed{ 0.05f };
     int m_viewLoc{ -1 }; // storing locally to avoid passing every frame (no clue if this is more preformatn lol)

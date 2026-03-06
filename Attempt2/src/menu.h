@@ -18,7 +18,7 @@ public:
 	Menu(Camera& camera);
 	~Menu();
 
-	void UpdateAndDrawMenu(int modelLoc, int colorLoc, int projLoc2D, GLFWwindow* window, float delta, float halfHeight, float width, float height);
+	void UpdateAndDrawMenu(int modelLoc, int colorLoc, int projLoc2D, GLFWwindow* window, float delta, float width, float height);
 	void ToggleGravityAndInitVel(GLFWwindow* window);
 	
 
@@ -48,10 +48,10 @@ private:
 
 	glm::vec3 m_menuPosition{ 0, 0, 0 };
 
-	int m_timer{ 0 };
-	int m_timer2{ 0 };
-	int m_timer3{ 0 };
-	int m_timer4{ 0 };
+	float m_timer{ 0 };
+	float m_timer2{ 0 };
+	float m_timer3{ 0 };
+	float m_timer4{ 0 };
 	bool m_xPositive{ true };
 	bool m_yPositive{ true };
 	bool m_zPositive{ true };
@@ -61,5 +61,5 @@ private:
 
 };
 
-float SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, 
+void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, 
 					 int projLoc, float width, float height, Camera& camera);

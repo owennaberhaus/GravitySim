@@ -74,7 +74,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLEW_STATIC</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)attempt2\dependencies\GLFW\include;$(SolutionDir)Attempt2\dependencies\glew-2.3.1\include\GL;$(SolutionDir)Attempt2\dependencies\GLM\glm;$(SolutionDir)Attempt2\dependencies\GLM\glm\gtc</AdditionalIncludeDirectories>
@@ -93,7 +93,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLEW_STATIC</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)attempt2\dependencies\GLFW\include;$(SolutionDir)Attempt2\dependencies\glew-2.3.1\include\GL;$(SolutionDir)Attempt2\dependencies\GLM\glm;$(SolutionDir)Attempt2\dependencies\GLM\glm\gtc</AdditionalIncludeDirectories>
@@ -110,7 +110,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLEW_STATIC</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)attempt2\dependencies\GLFW\include;$(SolutionDir)Attempt2\dependencies\glew-2.3.1\include\GL;$(SolutionDir)Attempt2\dependencies\GLM\glm;$(SolutionDir)Attempt2\dependencies\GLM\glm\gtc</AdditionalIncludeDirectories>
@@ -129,7 +129,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLEW_STATIC</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)attempt2\dependencies\GLFW\include;$(SolutionDir)Attempt2\dependencies\glew-2.3.1\include\GL;$(SolutionDir)Attempt2\dependencies\GLM\glm;$(SolutionDir)Attempt2\dependencies\GLM\glm\gtc</AdditionalIncludeDirectories>
@@ -145,14 +145,17 @@
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
     <ClCompile Include="src\camera.cpp" />
+    <ClCompile Include="src\gamestate.cpp" />
     <ClCompile Include="src\menu.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\path.cpp" />
     <ClCompile Include="src\menu.h" />
+    <ClCompile Include="src\shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\clicker.h" />
+    <ClInclude Include="src\gamestate.h" />
     <ClInclude Include="src\object.h" />
     <ClInclude Include="src\path.h" />
     <ClInclude Include="src\shader.h" />

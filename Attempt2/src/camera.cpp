@@ -32,16 +32,17 @@ void Camera::HandleInput(GLFWwindow* window)
 
 }
 
-//void Camera::UpdateViewMatrix()
-//{
-//	glm::mat4 x_view = glm::lookAt(m_position, m_target, up); // create view matrix based on position and target
-//
-//	glm::mat4 view = glm::translate(glm::mat4(1.0f), m_position); // translate view matrix by negative of position
-//	// (we dont move the camera, we move the world in the opposite direction)
-//	glUniformMatrix4fv(m_viewLoc, 1, GL_FALSE, glm::value_ptr(x_view)); // send updated view matrix to shader
-//
-//
-//}
+void Camera::UpdateProjectionMatrix(int width, int height)
+{
+	float aspect = static_cast<float>(width) / static_cast<float>(height);
+
+	m_projection = glm::perspective(
+		glm::radians(45.0f),  // FOV
+		aspect,
+		0.1f,                 // near plane
+		1000.0f               // far plane
+	);
+}
 
 void Camera::UpdateViewMatrix()
 {
@@ -54,8 +55,8 @@ void Camera::UpdateViewMatrix()
 	m_cameraRight = glm::normalize(glm::cross(forward, worldUp));
 	m_cameraUp = glm::normalize(glm::cross(m_cameraRight, forward));
 
-	glm::mat4 view = glm::lookAt(m_position, m_target, m_cameraUp);
-	glUniformMatrix4fv(m_viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+	m_view = glm::lookAt(m_position, m_target, m_cameraUp);
+	glUniformMatrix4fv(m_viewLoc, 1, GL_FALSE, glm::value_ptr(m_view));
 }
 
 // TODO move movement to mouse input

@@ -99,7 +99,17 @@ void Object::DrawObject(int modelLoc, int colorLoc) {
 
 }
 
-void Object::Update(float delta) {
+void Object::TogglePaths(GLFWwindow* window, float delta)
+{
+    m_pathTimer += delta;
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && m_pathTimer > 0.2) {
+        m_drawPaths = !m_drawPaths;
+        m_pathTimer = 0;
+    }
+
+}
+
+void Object::Update(float delta, GLFWwindow* window) {
 
     m_posX += m_velX * delta;
     m_posY += m_velY * delta;
@@ -108,6 +118,8 @@ void Object::Update(float delta) {
     // Update model matrix
     m_model = glm::translate(glm::mat4(1.0f), glm::vec3(m_posX, m_posY, m_posZ));
     UpdateSize();
+
+    m_pathTimer += delta;
 }
 
 void Object::UpdateSize()
@@ -115,6 +127,13 @@ void Object::UpdateSize()
     m_model = glm::translate(glm::mat4(1.0f), glm::vec3(m_posX, m_posY, m_posZ));
     m_model = glm::scale(m_model, glm::vec3(m_mass, m_mass, m_mass));
 }
+
+void Object::UpdatePath(GLFWwindow* window, float delta) 
+{ 
+    m_path.UpdateVertices(m_posX, m_posY, m_posZ); 
+    TogglePaths(window, delta); 
+}
+
 
 
 // non member functions
@@ -233,15 +252,15 @@ void ApplyGravity2(std::vector<std::unique_ptr<Object>>& objects, float delta, M
         }
     }
 }
-
-void IncrementGravity(GLFWwindow* window, int& timer) {
-    if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS && GLFW_MOD_SHIFT && timer > 10) {
+float gravTimer{ 0 };
+void IncrementGravity(GLFWwindow* window, float deltaTime) {
+    if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS && GLFW_MOD_SHIFT && gravTimer > 0.2) {
         M_G += 0.1f;
-        timer = 0;
+        gravTimer = 0;
     }
-    if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS && timer > 10) {
+    if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS && gravTimer > 0.2) {
         M_G -= 0.1f;
-        timer = 0;
+        gravTimer = 0;
     }
-    timer++;
+    gravTimer += deltaTime;
 }
