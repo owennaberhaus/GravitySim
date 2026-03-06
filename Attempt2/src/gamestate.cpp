@@ -47,7 +47,8 @@ void GameState::PrintTutorial()
         "'B' to flip init vel sign, 'G' to turn off gravity, 'V' to toggle initial velocities\n" <<
         "WASD to move camera, scroll wheel to zoom in and out\n" <<
         "+ and - to increase and reduce the gravitational constant\n" <<
-        "objects will spawn on the plane normal to the camera direciton, that crosses (0, 0, 0)";
+        "objects will spawn on the plane normal to the camera direciton, that crosses (0, 0, 0)" <<
+        "esc key to pause the whole simulation\n";
 }
 
 void GameState::render()
