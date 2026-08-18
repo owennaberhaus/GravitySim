@@ -8,6 +8,7 @@ extern float M_G; // gravitational constant that is changed with + / -
 #include <matrix_transform.hpp>
 #include <type_ptr.hpp>
 #include <vector>
+#include <memory>
 #include <iostream>
 #include "path.h"
 
@@ -17,14 +18,16 @@ class Menu;
 class Object
 {
 private:
-    void GenCircleVertices(int segments);
+    void GenSphereMesh(int segments);
     void TogglePaths(GLFWwindow* window, float timer);
-   
+
 public:
 
     GLuint VAO{};
     GLuint VBO{};
+    GLuint EBO{};          // index buffer - a UV sphere can't be drawn without one
     GLsizei vertexCount{};
+    GLsizei indexCount{};
 
     Object(const Object&) = delete;            // disable copy constructor
     Object& operator=(const Object&) = delete; // disable copy assignment
@@ -33,7 +36,7 @@ public:
         glm::vec3 color = glm::vec3(0.0f, 0.0f, 1.0f), bool exertsGravity = true);
     ~Object();
 
-    void DrawObject(int modelLoc, int colorLoc);
+    void DrawObject(int modelLoc, int colorLoc, bool highlighted = false);
 
     void Update(float delta, GLFWwindow* window);
 
@@ -59,6 +62,13 @@ public:
     void IncVelY(float val, float delta) { m_velY += val * delta; }
 	void IncVelZ(float val, float delta) { m_velZ += val * delta; }
     void SetVel(float x, float y, float z = 0) { m_velX = x; m_velY = y; m_velZ = z; }
+
+    // vector conveniences - the physics below reads far better in vec3 form
+    glm::vec3 GetPos() { return glm::vec3(m_posX, m_posY, m_posZ); }
+    glm::vec3 GetVel() { return glm::vec3(m_velX, m_velY, m_velZ); }
+    void SetPosition(const glm::vec3& p) { m_posX = p.x; m_posY = p.y; m_posZ = p.z; }
+    void SetVel(const glm::vec3& v) { m_velX = v.x; m_velY = v.y; m_velZ = v.z; }
+    void IncVel(const glm::vec3& accel, float delta) { m_velX += accel.x * delta; m_velY += accel.y * delta; m_velZ += accel.z * delta; }
     void IncMass(float val) { m_mass += val; }
 
     void UpdatePath(GLFWwindow* window, float delta);
@@ -78,7 +88,8 @@ private:
     float m_velY{};
     float m_velZ{};
     bool m_movable{};
-    std::vector<float> m_vertices{};
+	std::vector<float> m_vertices{};  // interleaved: px,py,pz, nx,ny,nz for each vertex
+    std::vector<GLuint> m_indices{};
     const float m_GRAVITY = -0.000000f; // negative Y = down
     glm::mat4 m_model{ 1.0f };
     glm::vec3 m_color;

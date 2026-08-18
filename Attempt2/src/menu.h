@@ -61,5 +61,8 @@ private:
 
 };
 
-void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, 
-					 int projLoc, float width, float height, Camera& camera);
+// Solves the world-space bounds used to map the cursor onto the spawn plane.
+// It no longer builds a projection matrix - the Camera owns that now, so
+// rendering and mouse picking can't disagree about what the view frustum is.
+void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop,
+					 float width, float height, Camera& camera);

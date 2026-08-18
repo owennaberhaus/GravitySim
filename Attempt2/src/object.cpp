@@ -1,59 +1,104 @@
 #include "object.h"
-#include "menu.h" 
+#include "menu.h"
+
+#include <cmath>
+#include <algorithm>
 
 float M_G{ 0.5f }; // gravitational constant - adjust as needed for visual effect
 
+static constexpr float kSoftening{ 0.05f };
 
-void Object::GenCircleVertices(int segments)
+
+void Object::GenSphereMesh(int segments)
 {
-    m_vertices.push_back(0.0f);
-    m_vertices.push_back(0.0f);
-	m_vertices.push_back(0.0f);
-    for (auto i{ 0 }; i <= segments; ++i) {
-        float phi = M_PI * i / segments;
-        for (auto j{ 0 }; j < segments; ++j) { 
-            float theta = (2 * static_cast<float>(M_PI)) * j / segments;
+    const int stacks = segments;
+    const int slices = segments;
 
-            // SPHEREICALNCOORDINATEC CALLSSC # CALC ##333!!!N!111!!
-            float x = sin(phi) * cos(theta);
-            float y = sin(phi) * sin(theta);
-            float z = cos(phi);
+    m_vertices.clear();
+    m_indices.clear();
+    m_vertices.reserve(static_cast<size_t>(stacks + 1) * (slices + 1) * 6);
+    m_indices.reserve(static_cast<size_t>(stacks) * slices * 6);
 
-            m_vertices.push_back(x);
-            m_vertices.push_back(y);
-			m_vertices.push_back(z);
+    for (int i = 0; i <= stacks; ++i)
+    {
+        float phi = static_cast<float>(M_PI) * i / stacks;
+        float sinPhi = std::sin(phi);
+        float cosPhi = std::cos(phi);
+
+        for (int j = 0; j <= slices; ++j)
+        {
+            float theta = 2.0f * static_cast<float>(M_PI) * j / slices;
+
+            float x = sinPhi * std::cos(theta);
+            float y = sinPhi * std::sin(theta);
+            float z = cosPhi;
+
+            m_vertices.insert(m_vertices.end(), { x, y, z, x, y, z });
         }
     }
-    vertexCount = m_vertices.size() / 3; // each vertex has 3 points (x,y,z)
 
-    // generate and bind VAO // VBO
+    for (int i = 0; i < stacks; ++i)
+    {
+        for (int j = 0; j < slices; ++j)
+        {
+            GLuint topLeft     = static_cast<GLuint>(i * (slices + 1) + j);
+            GLuint topRight    = topLeft + 1;
+            GLuint bottomLeft  = topLeft + (slices + 1);
+            GLuint bottomRight = bottomLeft + 1;
+
+            m_indices.insert(m_indices.end(), {
+                topLeft,  bottomLeft, topRight,
+                topRight, bottomLeft, bottomRight
+                });
+        }
+    }
+
+    vertexCount = static_cast<GLsizei>(m_vertices.size() / 6);
+    indexCount = static_cast<GLsizei>(m_indices.size());
+
+    // generate and bind VAO // VBO // EBO
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
+
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
     glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(float), m_vertices.data(), GL_STATIC_DRAW);
 
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(GLuint), m_indices.data(), GL_STATIC_DRAW);
+
     glVertexAttribPointer(
-        0,                // location in shader
-        3,                // 2 floats per vertex (x,y)
+        0,                 // location in shader
+        3,                 // 3 floats per position (x,y,z)
         GL_FLOAT,
         GL_FALSE,
-        3 * sizeof(float), // stride
+        6 * sizeof(float), // stride
         (void*)0
     );
     glEnableVertexAttribArray(0);
 
+    glVertexAttribPointer(
+        1,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        6 * sizeof(float),
+        (void*)(3 * sizeof(float))
+    );
+    glEnableVertexAttribArray(1);
+
     glBindVertexArray(0); // unbind the vertex array to keep state clean
-
-
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 Object::Object(Object&& other) noexcept             // move constructor
 {
     VAO = other.VAO;
     VBO = other.VBO;
+    EBO = other.EBO;
     vertexCount = other.vertexCount;
+    indexCount = other.indexCount;
     m_posX = other.m_posX;
     m_posY = other.m_posY;
     m_posZ = other.m_posZ;
@@ -64,11 +109,13 @@ Object::Object(Object&& other) noexcept             // move constructor
     m_color = other.m_color;
     m_exertsGravity = other.m_exertsGravity;
     m_vertices = std::move(other.m_vertices);
+    m_indices = std::move(other.m_indices);
     m_model = other.m_model;
 
-    // Null out the other’s handles so destructor won’t delete them
+    // Null out the other's handles so destructor won't delete them
     other.VAO = 0;
     other.VBO = 0;
+    other.EBO = 0;
 }
 
 Object::Object(float x, float y, float z, float vx, float vy, float vz, float m, bool movable,
@@ -76,24 +123,28 @@ Object::Object(float x, float y, float z, float vx, float vy, float vz, float m,
     : m_posX(x), m_posY(y), m_posZ(z), m_velX(vx), m_velY(vy), m_velZ(vz), m_mass(m), m_movable(movable), m_exertsGravity(exertsGravity)
 {
     SetColor(glm::vec3(0.5f, 0.5f, 1.0f)); // default color
-    GenCircleVertices(50); // 50 segments for now
+    GenSphereMesh(32);
 }
 
 Object::~Object() // destructor
 {
     glDeleteBuffers(1, &VBO); // cleanup!
+    glDeleteBuffers(1, &EBO);
     glDeleteVertexArrays(1, &VAO);
     std::cout << "Object destroyed\n";
 }
 
-void Object::DrawObject(int modelLoc, int colorLoc) {
+void Object::DrawObject(int modelLoc, int colorLoc, bool highlighted) {
+
+    glm::vec3 drawColor = highlighted
+        ? glm::min(m_color * 1.8f + glm::vec3(0.35f), glm::vec3(1.0f))
+        : m_color;
 
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(m_model));
-    glUniform3fv(colorLoc, 1, glm::value_ptr(m_color));
+    glUniform3fv(colorLoc, 1, glm::value_ptr(drawColor));
 
     glBindVertexArray(VAO);
-    // glDrawArrays(GL_TRIANGLE_FAN, 0, vertexCount);
-    glDrawArrays(GL_POINTS, 0, vertexCount);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
 
 
@@ -128,10 +179,10 @@ void Object::UpdateSize()
     m_model = glm::scale(m_model, glm::vec3(m_mass, m_mass, m_mass));
 }
 
-void Object::UpdatePath(GLFWwindow* window, float delta) 
-{ 
-    m_path.UpdateVertices(m_posX, m_posY, m_posZ); 
-    TogglePaths(window, delta); 
+void Object::UpdatePath(GLFWwindow* window, float delta)
+{
+    m_path.UpdateVertices(m_posX, m_posY, m_posZ);
+    TogglePaths(window, delta);
 }
 
 
@@ -142,105 +193,90 @@ void Object::UpdatePath(GLFWwindow* window, float delta)
 
 void ApplyGravity(Object& one, Object& two, float delta, Menu& menu)
 {
-    float tx = std::abs(one.GetPosX() - two.GetPosX());
-    float ty = std::abs(one.GetPosY() - two.GetPosY());
-	float tz = std::abs(one.GetPosZ() - two.GetPosZ());
-    float radius = static_cast<float>(sqrt(pow(tx, 2) + pow(ty, 2) + pow(tz, 2)));
+    glm::vec3 pos1 = one.GetPos();
+    glm::vec3 pos2 = two.GetPos();
 
-    if (radius >= one.GetMass() + two.GetMass())
+    glm::vec3 diff = pos2 - pos1;
+    float dist2 = glm::dot(diff, diff);
+
+    if (dist2 < 1e-12f)
+        return;
+
+    float dist = std::sqrt(dist2);
+    glm::vec3 normal = diff / dist;
+
+    float contact = one.GetMass() + two.GetMass();
+
+    if (dist >= contact)
     {
+        if (!menu.GetGravitySwitch())
+            return;
 
-        float fMag = static_cast<float>(M_G * (one.GetMass() * two.GetMass()) / static_cast<float>(pow(radius, 2)));
-        float oneAccel = menu.GetGravitySwitch() ? fMag / one.GetMass() : 0;
-        float twoAccel = menu.GetGravitySwitch() ? fMag / two.GetMass() : 0;
+        float fMag = M_G * one.GetMass() * two.GetMass() / (dist2 + kSoftening * kSoftening);
 
-        one.GetMovable() ? one.IncVelX((tx / radius) * oneAccel * (one.GetPosX() >= two.GetPosX() ? -1 : 1), delta) : one.IncVelX(0, delta);
-        one.GetMovable() ? one.IncVelY((ty / radius) * oneAccel * (one.GetPosY() >= two.GetPosY() ? -1 : 1), delta) : one.IncVelY(0, delta);
-        one.GetMovable() ? one.IncVelZ((tz / radius) * oneAccel * (one.GetPosZ() >= two.GetPosZ() ? -1 : 1), delta) : one.IncVelZ(0, delta);
-        two.GetMovable() ? two.IncVelX((tx / radius) * oneAccel * (two.GetPosX() >= one.GetPosX() ? -1 : 1), delta) : two.IncVelX(0, delta);
-        two.GetMovable() ? two.IncVelY((ty / radius) * oneAccel * (two.GetPosY() >= one.GetPosY() ? -1 : 1), delta) : two.IncVelY(0, delta);
-        two.GetMovable() ? two.IncVelZ((tz / radius) * oneAccel * (two.GetPosZ() >= one.GetPosZ() ? -1 : 1), delta) : two.IncVelZ(0, delta);
+        if (one.GetMovable())
+            one.IncVel(normal * (fMag / one.GetMass()), delta);
+        if (two.GetMovable())
+            two.IncVel(-normal * (fMag / two.GetMass()), delta);
 
-    }
-    else 
-    {
-        glm::vec3 pos1(one.GetPosX(), one.GetPosY(), one.GetPosZ());
-        glm::vec3 pos2(two.GetPosX(), two.GetPosY(), two.GetPosZ());
-
-        glm::vec3 vel1(one.GetVelX(), one.GetVelY(), one.GetVelZ());
-        glm::vec3 vel2(two.GetVelX(), two.GetVelY(), two.GetVelZ());
-
-        float m1 = one.GetMass();
-        float m2 = two.GetMass();
-
-        // Collision normal
-        glm::vec3 normal = glm::normalize(pos2 - pos1);
-
-        // ---- CASE 1: one movable, two immovable ----
-        if (one.GetMovable() && !two.GetMovable())
-        {
-            glm::vec3 reflected = vel1 - 2.0f * glm::dot(vel1, normal) * normal;
-            one.SetVel(reflected.x, reflected.y, reflected.z);
-        }
-        else if (!one.GetMovable() && two.GetMovable())
-        {
-            glm::vec3 reflected = vel2 - 2.0f * glm::dot(vel2, -normal) * (-normal);
-            two.SetVel(reflected.x, reflected.y, reflected.z);
-        }
-        // ---- CASE 2: both movable (proper 2D elastic collision) ----
-        else if (one.GetMovable() && two.GetMovable())
-        {
-            glm::vec3 diff = pos2 - pos1;
-            float dist = glm::length(diff);
-            if (dist == 0.0f) return;
-
-            glm::vec3 normal = diff / dist;
-
-            glm::vec3 relativeVel = vel1 - vel2;
-            float velAlongNormal = glm::dot(relativeVel, normal);
-
-            if (velAlongNormal > 0.0f)
-                return;
-
-            float restitution = 1.0f;
-
-            float j = -(1.0f + restitution) * velAlongNormal;
-            j /= (1.0f / m1 + 1.0f / m2);
-
-            glm::vec3 impulse = j * normal;
-
-            one.SetVel(
-                vel1.x + impulse.x / m1,
-                vel1.y + impulse.y / m1,
-                vel1.z + impulse.z / m1
-            );
-
-            two.SetVel(
-                vel2.x - impulse.x / m2,
-                vel2.y - impulse.y / m2,
-                vel2.z - impulse.z / m2
-            );
-
-            // ---- Proper position correction ----
-            float overlap = (one.GetMass() + two.GetMass()) - dist;
-            if (overlap > 0.0f)
-            {
-                float percent = 0.8f;
-                float slop = 0.01f;
-
-                glm::vec3 correction = normal * percent *
-                    std::max(overlap - slop, 0.0f) /
-                    (1.0f / m1 + 1.0f / m2);
-
-                pos1 -= correction / m1;
-                pos2 += correction / m2;
-
-                one.SetPosition(pos1.x, pos1.y, pos1.z);
-                two.SetPosition(pos2.x, pos2.y, pos2.z);
-            }
-        }
+        return;
     }
 
+    glm::vec3 vel1 = one.GetVel();
+    glm::vec3 vel2 = two.GetVel();
+    float m1 = one.GetMass();
+    float m2 = two.GetMass();
+    float overlap = contact - dist;
+
+    // CASE 1: one movable, two immovable 
+    if (one.GetMovable() && !two.GetMovable())
+    {
+        if (glm::dot(vel1, normal) > 0.0f)
+            one.SetVel(vel1 - 2.0f * glm::dot(vel1, normal) * normal);
+
+        one.SetPosition(pos1 - normal * overlap);
+        return;
+    }
+    if (!one.GetMovable() && two.GetMovable())
+    {
+        if (glm::dot(vel2, -normal) > 0.0f)
+            two.SetVel(vel2 - 2.0f * glm::dot(vel2, normal) * normal);
+
+        two.SetPosition(pos2 + normal * overlap);
+        return;
+    }
+    if (!one.GetMovable() && !two.GetMovable())
+        return;
+
+    // CASE 2: both movable (proper elastic collision)
+    glm::vec3 relativeVel = vel1 - vel2;
+    float velAlongNormal = glm::dot(relativeVel, normal);
+
+    if (velAlongNormal > 0.0f)
+    {
+        const float restitution = 1.0f;
+
+        float j = -(1.0f + restitution) * velAlongNormal;
+        j /= (1.0f / m1 + 1.0f / m2);
+
+        glm::vec3 impulse = j * normal;
+
+        one.SetVel(vel1 + impulse / m1);
+        two.SetVel(vel2 - impulse / m2);
+    }
+
+    // Proper position correction 
+    if (overlap > 0.0f)
+    {
+        const float percent = 0.8f;
+        const float slop = 0.01f;
+
+        glm::vec3 correction = normal * (percent * std::max(overlap - slop, 0.0f) /
+            (1.0f / m1 + 1.0f / m2));
+
+        one.SetPosition(pos1 - correction / m1);
+        two.SetPosition(pos2 + correction / m2);
+    }
 }
 
 void ApplyGravity2(std::vector<std::unique_ptr<Object>>& objects, float delta, Menu& menu) {

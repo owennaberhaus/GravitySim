@@ -195,8 +195,8 @@ void Menu::SwapSliderColors()
 
 }
 
-void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop, 
-					 int projLoc, float width, float height, Camera& camera)
+void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, float& worldTop,
+					 float width, float height, Camera& camera)
 {
 	float aspect = width / height;
 
@@ -221,12 +221,4 @@ void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, fl
 	worldBottom = centerY - halfHeight;
 	worldTop = centerY + halfHeight;
 
-	// use perspective for true 3d rendering -- changed from glm::ortho 
-	glm::mat4 projection = glm::perspective(
-		glm::radians(45.0f),
-		aspect,
-		0.1f,
-		100.0f
-	);
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 }

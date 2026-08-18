@@ -3,7 +3,7 @@
 GameState::GameState(GLFWwindow* window) :
     m_shader(),
     m_window(window),
-	m_camera(m_shader.GetViewLoc()),
+	m_camera(m_shader.GetShader(), static_cast<int>(m_shader.GetViewLoc()), static_cast<int>(m_shader.GetProjLoc())),
     m_menu(m_camera),
 	m_width(0),
 	m_height(0),
@@ -45,7 +45,8 @@ void GameState::PrintTutorial()
         "Green means positive velocity while red means negative\n" <<
         "Arrow keys to switch reference object and to resize\n" <<
         "'B' to flip init vel sign, 'G' to turn off gravity, 'V' to toggle initial velocities\n" <<
-        "WASD to move camera, scroll wheel to zoom in and out\n" <<
+        "WASD to orbit camera, Q/E to roll, 'R' to level out, scroll wheel to zoom\n" <<
+        "hover an object (it brightens) and press SPACE to delete it\n" <<
         "+ and - to increase and reduce the gravitational constant\n" <<
         "objects will spawn on the plane normal to the camera direciton, that crosses (0, 0, 0)" <<
         "esc key to pause the whole simulation\n";
@@ -68,10 +69,14 @@ void GameState::render()
         obj->UpdatePath(m_window, m_deltaTime);
         obj->DrawPath(m_shader.GetModelLoc(), m_shader.GetColorLoc());
     }
-    for (auto& obj : m_objects)
+    // The object under the cursor draws brighter, so it's obvious what SPACE
+    // is about to delete.
+    const int hovered = m_clicker.GetHoveredIndex();
+    for (size_t i = 0; i < m_objects.size(); ++i)
     {
-        obj->Update(m_deltaTime, m_window);
-        obj->DrawObject(m_shader.GetModelLoc(), m_shader.GetColorLoc());
+        m_objects[i]->Update(m_deltaTime, m_window);
+        m_objects[i]->DrawObject(m_shader.GetModelLoc(), m_shader.GetColorLoc(),
+            static_cast<int>(i) == hovered);
     }
 
     /* Swap front and back buffers */
@@ -90,18 +95,29 @@ void GameState::update()
         m_deltaTime = 0.0f;
     m_gameTimer.reset(); // then immidiately reset for next frame
 
-    m_camera.Update(m_window);
+    // Framebuffer size drives the viewport and the projection aspect ratio.
     glfwGetFramebufferSize(m_window, &m_width, &m_height); // snag new window dimensions
     glViewport(0, 0, m_width, m_height); // then update opengl viewport to avoid stretching
 
-    // updates projection matrix so that things look about right based on camera position
-    SolveProjection(m_worldLeft, m_worldRight, m_worldBottom, m_worldTop, m_shader.GetProjLoc(), m_width, m_height, m_camera);
+    // Camera now owns the projection matrix, so it needs the size first.
+    m_camera.Update(m_window, m_width, m_height);
+
+    // world-space bounds of the spawn plane
+    SolveProjection(m_worldLeft, m_worldRight, m_worldBottom, m_worldTop, static_cast<float>(m_width), static_cast<float>(m_height), m_camera);
 
     glfwGetCursorPos(m_window, &m_xpos, &m_ypos); // grab current mouse position
 
-    m_worldX = m_worldLeft + (m_xpos / m_width) * (m_worldRight - m_worldLeft); // should move these to some other function
-    m_worldY = m_worldTop - (m_ypos / m_height) * (m_worldTop - m_worldBottom);
-    m_clicker.DeleteObjects(m_objects, m_window, m_xpos, m_ypos, m_width, m_height, m_camera);
+    // Cursor coordinates are in WINDOW space, which is not the same as the
+    // framebuffer size on a scaled display - normalise against the right one.
+    int winW{ 0 }, winH{ 0 };
+    glfwGetWindowSize(m_window, &winW, &winH);
+    if (winW > 0 && winH > 0)
+    {
+        m_worldX = m_worldLeft + static_cast<float>(m_xpos / winW) * (m_worldRight - m_worldLeft);
+        m_worldY = m_worldTop - static_cast<float>(m_ypos / winH) * (m_worldTop - m_worldBottom);
+    }
+
+    m_clicker.UpdateHoverAndDelete(m_objects, m_window, m_xpos, m_ypos, m_camera);
     m_clicker.MouseControl(m_window, m_worldX / m_camera.GetRadius(), m_worldY / m_camera.GetRadius(), m_objects, m_menu, g_scrollDelta, m_camera);
     m_menu.ToggleGravityAndInitVel(m_window);
 

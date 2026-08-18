@@ -1,13 +1,15 @@
 #pragma once
 #include "GLFW/glfw3.h"
 #include <vector>
+#include <limits>
+#include <cmath>
 #include "object.h"
 #include "menu.h"
 #include "camera.h"
 extern float g_scrollDelta;
 
 // just 1 class to control all mouse input
-// TODO: actually move all input into the clicker class 
+// TODO: actually move all input into the clicker class ... haha
 class Clicker {
 private:
     glm::vec3 GetSpawnPositionOnPlane(float worldX, float worldY, Camera& camera, float distanceScale = 1.0f)
@@ -31,67 +33,107 @@ private:
         return spawnPos;
     }
 
-    glm::vec3 GetMouseRay(double mouseX, double mouseY, int width, int height, const glm::mat4& projection, const glm::mat4& view)
+    // Builds the world-space direction of the ray under the cursor.
+    //
+	// curser position is in window coordinates, with (0,0) at the top-left
+    glm::vec3 GetMouseRay(GLFWwindow* window, double mouseX, double mouseY,
+        const glm::mat4& projection, const glm::mat4& view)
     {
-        float x = (2.0f * mouseX) / width - 1.0f;
-        float y = 1.0f - (2.0f * mouseY) / height;
+        int winW{ 0 }, winH{ 0 };
+        glfwGetWindowSize(window, &winW, &winH);
+        if (winW <= 0 || winH <= 0)
+            return glm::vec3(0.0f, 0.0f, -1.0f);
+
+        // window pixels must be turned to normalized device coordinates 
+        float x = (2.0f * static_cast<float>(mouseX)) / static_cast<float>(winW) - 1.0f;
+        float y = 1.0f - (2.0f * static_cast<float>(mouseY)) / static_cast<float>(winH);
 
         glm::vec4 rayClip(x, y, -1.0f, 1.0f);
 
+        // undo the projection to get a direction in eye space, then the view to get it in world space
         glm::vec4 rayEye = glm::inverse(projection) * rayClip;
         rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
 
-        glm::vec3 rayWorld = glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
-
-        return rayWorld;
+        return glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
     }
 
-    bool RayIntersectsSphere(glm::vec3 rayOrigin, glm::vec3 rayDir, glm::vec3 sphereCenter, float sphereRadius)
+    // Distance along the ray to the nearest intersection with the sphere, or a
+    // negative value if it never hits in front of the origin.
+
+    float RaySphereDistance(const glm::vec3& rayOrigin, const glm::vec3& rayDir,
+        const glm::vec3& sphereCenter, float sphereRadius)
     {
         glm::vec3 oc = rayOrigin - sphereCenter; // origin to center
 
-		// quadratic formula components for ray-sphere intersection (reddit glazed this)
+        // quadratic formula components for ray-sphere intersection
         float a = glm::dot(rayDir, rayDir);
         float b = 2.0f * glm::dot(oc, rayDir);
         float c = glm::dot(oc, oc) - sphereRadius * sphereRadius;
 
         float discriminant = b * b - 4.0f * a * c;
-        return discriminant >= 0.0f;
+        if (discriminant < 0.0f)
+            return -1.0f; // the line misses entirely
 
-        float sqrtD = glm::sqrt(discriminant);
+        float sqrtD = std::sqrt(discriminant);
         float t0 = (-b - sqrtD) / (2.0f * a); // near hit
         float t1 = (-b + sqrtD) / (2.0f * a); // far hit
 
-        // at least one intersection must be in front of the ray origin
-        return t0 > 0.0f || t1 > 0.0f;
+        if (t0 > 0.0f) return t0; // normal case: entering the sphere
+        if (t1 > 0.0f) return t1; // camera is inside the sphere
+        return -1.0f;             // wholly behind the camera
     }
 
 public:
-    void DeleteObjects(std::vector<std::unique_ptr<Object>>& objects, GLFWwindow* window, float xpos, float ypos, int width, int height, Camera& camera)
+    // Which object is the cursor over? Returns the index of the CLOSEST one the ray actually enters, or -1 for none.
+    int FindHoveredObject(std::vector<std::unique_ptr<Object>>& objects, GLFWwindow* window,
+        double xpos, double ypos, Camera& camera)
     {
         glm::vec3 rayOrigin = camera.GetPosition();
-        glm::vec3 rayDir = GetMouseRay(xpos, ypos, width, height, camera.GetProjectionMatrix(), camera.GetViewMatrix());
+        glm::vec3 rayDir = GetMouseRay(window, xpos, ypos,
+            camera.GetProjectionMatrix(), camera.GetViewMatrix());
 
-		for (auto i = objects.begin(); i != objects.end(); ) // dynamically erase objects while iterating, only increment if not erasing
+        int nearest = -1;
+        float nearestT = std::numeric_limits<float>::max();
+
+        for (size_t i = 0; i < objects.size(); ++i)
         {
-            glm::vec3 center((*i)->GetPosX(), (*i)->GetPosY(), (*i)->GetPosZ());
-            if (RayIntersectsSphere(rayOrigin, rayDir, center, (*i)->GetMass() * 2) && glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            float t = RaySphereDistance(rayOrigin, rayDir, objects[i]->GetPos(), objects[i]->GetMass());
+            if (t >= 0.0f && t < nearestT)
             {
-                i = objects.erase(i);  // remove and get next valid iterator - erase returns next element
-                std::cout << "true" << '\n';
-            }
-            else
-            {
-                ++i;
+                nearestT = t;
+                nearest = static_cast<int>(i);
             }
         }
+
+        return nearest;
     }
+
+    // Refresh what's under the cursor, and delete it on a space press.
+    void UpdateHoverAndDelete(std::vector<std::unique_ptr<Object>>& objects, GLFWwindow* window,
+        double xpos, double ypos, Camera& camera)
+    {
+        m_hoveredIndex = FindHoveredObject(objects, window, xpos, ypos, camera);
+
+        // Rising edge only
+        bool spaceDown = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+        bool spacePressed = spaceDown && !m_spaceWasDown;
+        m_spaceWasDown = spaceDown;
+
+        if (spacePressed && m_hoveredIndex >= 0 && m_hoveredIndex < static_cast<int>(objects.size()))
+        {
+            objects.erase(objects.begin() + m_hoveredIndex);
+            m_hoveredIndex = -1; // whatever was under the cursor is gone
+        }
+    }
+
+    // -1 when nothing is hovered. Used by the renderer to brighten the target
+    int GetHoveredIndex() const { return m_hoveredIndex; }
 
     void MouseControl(GLFWwindow* window, float worldX, float worldY, std::vector<std::unique_ptr<Object>>& objects, Menu& menu, float& g_scrollDelta, Camera& camera) {
         /*frame timer*/
         ++m_framesSinceClick;
 
-        /*catch where*/
+        // catch where
         glm::vec3 spawnPos = GetSpawnPositionOnPlane(worldX, worldY, camera, 1.0f) * static_cast<float>(pow(camera.GetRadius(), 3) * 1.25);
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && m_framesSinceClick > 30)
         {
@@ -124,6 +166,8 @@ public:
     }
 private:
     int m_framesSinceClick{ 0 };
+    int m_hoveredIndex{ -1 };
+    bool m_spaceWasDown{ false };
 
 };
 
