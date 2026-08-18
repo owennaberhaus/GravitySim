@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -144,19 +144,25 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
+    <ClCompile Include="src\atomscene.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\gamestate.cpp" />
     <ClCompile Include="src\menu.cpp" />
+    <ClCompile Include="src\isosurface.cpp" />
     <ClCompile Include="src\object.cpp" />
+    <ClCompile Include="src\orbital.cpp" />
     <ClCompile Include="src\path.cpp" />
     <ClCompile Include="src\menu.h" />
     <ClCompile Include="src\shader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\atomscene.h" />
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\clicker.h" />
     <ClInclude Include="src\gamestate.h" />
+    <ClInclude Include="src\isosurface.h" />
     <ClInclude Include="src\object.h" />
+    <ClInclude Include="src\orbital.h" />
     <ClInclude Include="src\path.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\timer.h" />

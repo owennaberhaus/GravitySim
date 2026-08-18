@@ -13,6 +13,7 @@
 #include "clicker.h"
 #include "shader.h"
 #include "timer.h"
+#include "atomscene.h"
 
 class GameState
 {
@@ -32,12 +33,17 @@ public:
 	void SetDeltaTime(float delta) { m_deltaTime = delta; }	
 	void Pause();
 
-private: 
+	enum class Mode { Classical, Quantum };
+
+private:
 	Shader m_shader;
 	Camera m_camera;
 	Menu m_menu;
 	Timer m_gameTimer;
 	Clicker m_clicker;
+	AtomScene m_atom;
+	Mode m_mode{ Mode::Classical };
+	bool m_tabWasPressed{ false };
 	// vector that all objects are dynamically allocated to
 	std::vector<std::unique_ptr<Object>> m_objects{};
 

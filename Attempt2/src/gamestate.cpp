@@ -5,6 +5,7 @@ GameState::GameState(GLFWwindow* window) :
     m_window(window),
 	m_camera(m_shader.GetShader(), static_cast<int>(m_shader.GetViewLoc()), static_cast<int>(m_shader.GetProjLoc())),
     m_menu(m_camera),
+    m_atom(m_shader),
 	m_width(0),
 	m_height(0),
 	m_deltaTime(0.0f),
@@ -49,12 +50,23 @@ void GameState::PrintTutorial()
         "hover an object (it brightens) and press SPACE to delete it\n" <<
         "+ and - to increase and reduce the gravitational constant\n" <<
         "objects will spawn on the plane normal to the camera direciton, that crosses (0, 0, 0)" <<
-        "esc key to pause the whole simulation\n";
+        "esc key to pause the whole simulation\n" <<
+        "tab to switch between the gravity sim and quantum mode\n";
+
+    m_atom.PrintControls();
 }
 
 void GameState::render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the screen each frame to draw on a blank canvas
+
+    if (m_mode == Mode::Quantum)
+    {
+        m_atom.Render(m_camera);
+        glfwSwapBuffers(m_window);
+        glfwPollEvents();
+        return;
+    }
 
     glUseProgram(m_shader.GetShader2D());
     m_menu.UpdateAndDrawMenu(m_shader.GetModelLoc2D(), m_shader.GetColorLoc2D(), m_shader.GetProjLoc2D(), m_window, m_deltaTime, m_width, m_height);
@@ -101,6 +113,17 @@ void GameState::update()
 
     // Camera now owns the projection matrix, so it needs the size first.
     m_camera.Update(m_window, m_width, m_height);
+
+    bool tabPressed = glfwGetKey(m_window, GLFW_KEY_TAB) == GLFW_PRESS;
+    if (tabPressed && !m_tabWasPressed)
+        m_mode = (m_mode == Mode::Classical) ? Mode::Quantum : Mode::Classical;
+    m_tabWasPressed = tabPressed;
+
+    if (m_mode == Mode::Quantum)
+    {
+        m_atom.Update(m_window, m_camera);
+        return;
+    }
 
     // world-space bounds of the spawn plane
     SolveProjection(m_worldLeft, m_worldRight, m_worldBottom, m_worldTop, static_cast<float>(m_width), static_cast<float>(m_height), m_camera);

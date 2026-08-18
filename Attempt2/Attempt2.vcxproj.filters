@@ -18,6 +18,15 @@
     <ClCompile Include="src\application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\orbital.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\isosurface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atomscene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -42,6 +51,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\orbital.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\isosurface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\atomscene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\path.h">
