@@ -154,6 +154,7 @@
     <ClCompile Include="src\path.cpp" />
     <ClCompile Include="src\menu.h" />
     <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\text.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\atomscene.h" />
@@ -165,6 +166,7 @@
     <ClInclude Include="src\orbital.h" />
     <ClInclude Include="src\path.h" />
     <ClInclude Include="src\shader.h" />
+    <ClInclude Include="src\text.h" />
     <ClInclude Include="src\timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

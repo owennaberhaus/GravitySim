@@ -2,6 +2,7 @@
 #include <glew.h>
 #include <GLFW/glfw3.h>
 #include <vector>
+#include <string>
 
 #include "object.h"
 #include "camera.h"
@@ -23,6 +24,9 @@ public:
 	void Update(GLFWwindow* window, Camera& camera);
 	void Render(Camera& camera);
 	void PrintControls();
+
+	// Same information Report() prints, for the on-screen HUD.
+	const std::vector<std::string>& HudLines() const { return m_hudLines; }
 
 private:
 	void Rebuild(Camera& camera);
@@ -62,6 +66,7 @@ private:
 	bool m_dirty{ true };
 
 	std::vector<orbital::Subshell> m_config;
+	std::vector<std::string> m_hudLines;
 
 	GLuint m_surfaceVAO{ 0 };
 	GLuint m_surfaceVBO{ 0 };

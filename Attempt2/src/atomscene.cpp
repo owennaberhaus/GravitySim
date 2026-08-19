@@ -267,24 +267,36 @@ void AtomScene::FrameCamera(Camera& camera, bool force)
 void AtomScene::Report()
 {
 	int charge = m_protons - m_electrons;
-	std::cout << orbital::ElementSymbol(m_protons)
-		<< "  Z=" << m_protons
-		<< " N=" << m_neutrons
-		<< " A=" << (m_protons + m_neutrons)
-		<< " charge=" << (charge > 0 ? "+" : "") << charge
-		<< "  " << orbital::ConfigString(m_config)
-		<< "  cloud " << m_cloudExtent << " a0"
-		<< "  iso " << static_cast<int>(m_isoFraction * 100.0f) << "%"
-		<< "  (" << (m_surfaceVerts / 3) << " triangles)";
 
+	std::string head = std::string(orbital::ElementSymbol(m_protons))
+		+ "  Z=" + std::to_string(m_protons)
+		+ " N=" + std::to_string(m_neutrons)
+		+ " A=" + std::to_string(m_protons + m_neutrons)
+		+ "  charge=" + (charge > 0 ? "+" : "") + std::to_string(charge);
+
+	std::string config = orbital::ConfigString(m_config);
+	if (config.empty())
+		config = "(no electrons)";
+
+	std::string detail = "iso " + std::to_string(static_cast<int>(m_isoFraction * 100.0f)) + "%";
 	int view = ResolvedView();
 	if (view == kAll)
-		std::cout << "  [all subshells]";
+		detail += "   all shells";
 	else if (view >= 0 && view < static_cast<int>(m_config.size()))
-		std::cout << "  [showing " << m_config[view].n
-			<< "spdf"[m_config[view].l] << " only]";
+	{
+		detail += "   showing ";
+		detail += std::to_string(m_config[view].n);
+		detail += "spdf"[m_config[view].l];
+		detail += " only";
+	}
+	detail += "   " + std::to_string(m_surfaceVerts / 3) + " tris";
 
-	std::cout << '\n';
+	m_hudLines.clear();
+	m_hudLines.push_back(head);
+	m_hudLines.push_back(config);
+	m_hudLines.push_back(detail);
+
+	std::cout << head << "  " << config << "  " << detail << '\n';
 }
 
 void AtomScene::Render(Camera& camera)

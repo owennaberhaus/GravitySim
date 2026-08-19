@@ -63,6 +63,7 @@ void GameState::render()
     if (m_mode == Mode::Quantum)
     {
         m_atom.Render(m_camera);
+        DrawHud();
         glfwSwapBuffers(m_window);
         glfwPollEvents();
         return;
@@ -90,6 +91,8 @@ void GameState::render()
         m_objects[i]->DrawObject(m_shader.GetModelLoc(), m_shader.GetColorLoc(),
             static_cast<int>(i) == hovered);
     }
+
+    DrawHud();
 
     /* Swap front and back buffers */
     glfwSwapBuffers(m_window);
@@ -165,4 +168,44 @@ void GameState::Pause()
     }
 
     m_escapeWasPressed = escapePressed;
+}
+
+void GameState::DrawHud()
+{
+    // Smoothed so the number is readable rather than flickering every frame.
+    if (m_deltaTime > 0.0f)
+        m_fps = m_fps * 0.94f + (1.0f / m_deltaTime) * 0.06f;
+
+    const float scale = 2.0f;
+    const glm::vec3 label(0.62f, 0.72f, 0.90f);
+    const glm::vec3 value(1.0f, 1.0f, 1.0f);
+
+    m_text.Begin(m_width, m_height);
+
+    if (m_mode == Mode::Quantum)
+    {
+        m_text.DrawAnchored("QUANTUM", TextRenderer::Anchor::TopRight, 0, scale, label);
+
+        const std::vector<std::string>& lines = m_atom.HudLines();
+        for (size_t i = 0; i < lines.size(); ++i)
+            m_text.DrawAnchored(lines[i], TextRenderer::Anchor::TopRight,
+                static_cast<int>(i) + 1, scale, value);
+    }
+    else
+    {
+        char buffer[128];
+        snprintf(buffer, sizeof(buffer), "objects %d   G=%.2f", static_cast<int>(m_objects.size()), M_G);
+
+        m_text.DrawAnchored("GRAVITY", TextRenderer::Anchor::TopRight, 0, scale, label);
+        m_text.DrawAnchored(buffer, TextRenderer::Anchor::TopRight, 1, scale, value);
+        if (m_paused)
+            m_text.DrawAnchored("PAUSED", TextRenderer::Anchor::TopRight, 2, scale, glm::vec3(1.0f, 0.7f, 0.3f));
+    }
+
+    char fps[32];
+    snprintf(fps, sizeof(fps), "%.0f fps", m_fps);
+    m_text.DrawAnchored(fps, TextRenderer::Anchor::BottomRight, 0, 1.5f, label);
+    m_text.DrawAnchored("tab switches mode", TextRenderer::Anchor::BottomLeft, 0, 1.5f, label);
+
+    m_text.End();
 }

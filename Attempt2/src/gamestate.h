@@ -14,6 +14,7 @@
 #include "shader.h"
 #include "timer.h"
 #include "atomscene.h"
+#include "text.h"
 
 class GameState
 {
@@ -33,6 +34,11 @@ public:
 	void SetDeltaTime(float delta) { m_deltaTime = delta; }	
 	void Pause();
 
+private:
+	void DrawHud();
+
+public:
+
 	enum class Mode { Classical, Quantum };
 
 private:
@@ -42,8 +48,10 @@ private:
 	Timer m_gameTimer;
 	Clicker m_clicker;
 	AtomScene m_atom;
+	TextRenderer m_text;
 	Mode m_mode{ Mode::Classical };
 	bool m_tabWasPressed{ false };
+	float m_fps{ 60.0f };
 	// vector that all objects are dynamically allocated to
 	std::vector<std::unique_ptr<Object>> m_objects{};
 
