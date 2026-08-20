@@ -51,7 +51,8 @@ void GameState::PrintTutorial()
         "+ and - to increase and reduce the gravitational constant\n" <<
         "objects will spawn on the plane normal to the camera direciton, that crosses (0, 0, 0)" <<
         "esc key to pause the whole simulation\n" <<
-        "tab to switch between the gravity sim and quantum mode\n";
+        "tab to switch between the gravity sim and quantum mode\n" << 
+        "When in quantum mode, use '[' and ']' to adjust the statistical area of electron presence rendered\n";
 
     m_atom.PrintControls();
 }
@@ -125,6 +126,8 @@ void GameState::update()
     if (m_mode == Mode::Quantum)
     {
         m_atom.Update(m_window, m_camera);
+        glfwGetCursorPos(m_window, &m_xpos, &m_ypos);
+        m_atom.UpdateHover(m_window, m_xpos, m_ypos, m_camera);
         return;
     }
 
@@ -190,12 +193,18 @@ void GameState::DrawHud()
         for (size_t i = 0; i < lines.size(); ++i)
             m_text.DrawAnchored(lines[i], TextRenderer::Anchor::TopRight,
                 static_cast<int>(i) + 1, scale, value);
+
+        const std::string& selected = m_atom.SelectedLabel();
+        if (!selected.empty())
+            m_text.DrawAnchored("selected: " + selected, TextRenderer::Anchor::TopLeft,
+                0, scale, glm::vec3(1.0f, 0.85f, 0.45f));
     }
     else
     {
         char buffer[128];
         snprintf(buffer, sizeof(buffer), "objects %d   G=%.2f", static_cast<int>(m_objects.size()), M_G);
 
+        DrawSliderLabels(label);
         m_text.DrawAnchored("GRAVITY", TextRenderer::Anchor::TopRight, 0, scale, label);
         m_text.DrawAnchored(buffer, TextRenderer::Anchor::TopRight, 1, scale, value);
         if (m_paused)
@@ -208,4 +217,30 @@ void GameState::DrawHud()
     m_text.DrawAnchored("tab switches mode", TextRenderer::Anchor::BottomLeft, 0, 1.5f, label);
 
     m_text.End();
+}
+
+void GameState::DrawSliderLabels(const glm::vec3& color)
+{
+    if (m_height <= 0)
+        return;
+
+    // The slider orbs are drawn through the menu's ortho projection, which
+    // spans -aspect..aspect across and -1..1 down. Both axes work out to the
+    // same height/2 pixels per unit, so one scale converts either one.
+    const float unit = m_height * 0.5f;
+    const float aspect = static_cast<float>(m_width) / static_cast<float>(m_height);
+    const float labelScale = 1.5f;
+    const glm::vec3 highlight(1.0f, 0.85f, 0.45f);
+
+    std::vector<Menu::SliderLabel> sliders = m_menu.GetSliderLabels();
+    for (size_t i = 0; i < sliders.size(); ++i)
+    {
+        const Menu::SliderLabel& s = sliders[i];
+
+        float centreX = s.x * unit + m_width * 0.5f;
+        float belowY = (1.0f - s.y) * unit + s.radius * unit + 8.0f;
+
+        m_text.Draw(s.text, centreX - m_text.TextWidth(s.text, labelScale) * 0.5f, belowY,
+            labelScale, s.selected ? highlight : color);
+    }
 }

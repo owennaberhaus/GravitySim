@@ -73,6 +73,19 @@ void Menu::UpdateAndDrawMenu(int modelLoc, int colorLoc, int projLoc2D,  GLFWwin
 	glEnable(GL_DEPTH_TEST); // re-enable depth testing for 3d rendering next loop
 }
 
+std::vector<Menu::SliderLabel> Menu::GetSliderLabels()
+{
+	std::vector<SliderLabel> out;
+	Object* sliders[4] = { &m_massSlider, &m_xVelSlider, &m_yVelSlider, &m_zVelSlider };
+	const char* names[4] = { "mass", "x vel", "y vel", "z vel" };
+
+	for (int i = 0; i < 4; ++i)
+		out.push_back({ names[i], sliders[i]->GetPosX(), sliders[i]->GetPosY(),
+			sliders[i]->GetMass(), selectedSlider == sliders[i] });
+
+	return out;
+}
+
 void Menu::IncSelectedRight()
 {
 	if (selectedSlider == &m_zVelSlider)

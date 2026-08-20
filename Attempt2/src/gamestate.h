@@ -36,6 +36,7 @@ public:
 
 private:
 	void DrawHud();
+	void DrawSliderLabels(const glm::vec3& color);
 
 public:
 

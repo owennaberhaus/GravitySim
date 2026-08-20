@@ -4,6 +4,7 @@
 #include <limits>
 #include <cmath>
 #include "object.h"
+#include "picking.h"
 #include "menu.h"
 #include "camera.h"
 extern float g_scrollDelta;
@@ -33,63 +34,13 @@ private:
         return spawnPos;
     }
 
-    // Builds the world-space direction of the ray under the cursor.
-    //
-	// curser position is in window coordinates, with (0,0) at the top-left
-    glm::vec3 GetMouseRay(GLFWwindow* window, double mouseX, double mouseY,
-        const glm::mat4& projection, const glm::mat4& view)
-    {
-        int winW{ 0 }, winH{ 0 };
-        glfwGetWindowSize(window, &winW, &winH);
-        if (winW <= 0 || winH <= 0)
-            return glm::vec3(0.0f, 0.0f, -1.0f);
-
-        // window pixels must be turned to normalized device coordinates 
-        float x = (2.0f * static_cast<float>(mouseX)) / static_cast<float>(winW) - 1.0f;
-        float y = 1.0f - (2.0f * static_cast<float>(mouseY)) / static_cast<float>(winH);
-
-        glm::vec4 rayClip(x, y, -1.0f, 1.0f);
-
-        // undo the projection to get a direction in eye space, then the view to get it in world space
-        glm::vec4 rayEye = glm::inverse(projection) * rayClip;
-        rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
-
-        return glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
-    }
-
-    // Distance along the ray to the nearest intersection with the sphere, or a
-    // negative value if it never hits in front of the origin.
-
-    float RaySphereDistance(const glm::vec3& rayOrigin, const glm::vec3& rayDir,
-        const glm::vec3& sphereCenter, float sphereRadius)
-    {
-        glm::vec3 oc = rayOrigin - sphereCenter; // origin to center
-
-        // quadratic formula components for ray-sphere intersection
-        float a = glm::dot(rayDir, rayDir);
-        float b = 2.0f * glm::dot(oc, rayDir);
-        float c = glm::dot(oc, oc) - sphereRadius * sphereRadius;
-
-        float discriminant = b * b - 4.0f * a * c;
-        if (discriminant < 0.0f)
-            return -1.0f; // the line misses entirely
-
-        float sqrtD = std::sqrt(discriminant);
-        float t0 = (-b - sqrtD) / (2.0f * a); // near hit
-        float t1 = (-b + sqrtD) / (2.0f * a); // far hit
-
-        if (t0 > 0.0f) return t0; // normal case: entering the sphere
-        if (t1 > 0.0f) return t1; // camera is inside the sphere
-        return -1.0f;             // wholly behind the camera
-    }
-
 public:
     // Which object is the cursor over? Returns the index of the CLOSEST one the ray actually enters, or -1 for none.
     int FindHoveredObject(std::vector<std::unique_ptr<Object>>& objects, GLFWwindow* window,
         double xpos, double ypos, Camera& camera)
     {
         glm::vec3 rayOrigin = camera.GetPosition();
-        glm::vec3 rayDir = GetMouseRay(window, xpos, ypos,
+        glm::vec3 rayDir = picking::MouseRay(window, xpos, ypos,
             camera.GetProjectionMatrix(), camera.GetViewMatrix());
 
         int nearest = -1;
@@ -97,7 +48,7 @@ public:
 
         for (size_t i = 0; i < objects.size(); ++i)
         {
-            float t = RaySphereDistance(rayOrigin, rayDir, objects[i]->GetPos(), objects[i]->GetMass());
+            float t = picking::RaySphere(rayOrigin, rayDir, objects[i]->GetPos(), objects[i]->GetMass());
             if (t >= 0.0f && t < nearestT)
             {
                 nearestT = t;

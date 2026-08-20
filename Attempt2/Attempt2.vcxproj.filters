@@ -68,6 +68,9 @@
     <ClInclude Include="src\path.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\picking.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>

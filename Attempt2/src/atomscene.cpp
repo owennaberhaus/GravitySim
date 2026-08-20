@@ -3,12 +3,38 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <limits>
 
 extern float g_scrollDelta; // same scroll accumulator the gravity mode drains
 
 namespace
 {
 	const glm::vec3 kColor(0.45f, 0.60f, 1.00f);
+
+	// Mass number of the isotope to show. Measured values up to calcium; past
+	// that, the most stable isobar from the semi-empirical mass formula,
+	//   Z(A) = A / (1.98 + 0.0155 * A^(2/3))
+	// inverted for A. Within about one mass unit of the real nuclide, which
+	// only moves the drawn nucleus radius by a fraction of a percent.
+	int MassNumber(int z)
+	{
+		static const int kMeasured[] = {
+			0, 1, 4, 7, 9, 11, 12, 14, 16, 19, 20,
+			23, 24, 27, 28, 31, 32, 35, 40, 39, 40
+		};
+		if (z <= 0)
+			return 0;
+		if (z < static_cast<int>(sizeof(kMeasured) / sizeof(kMeasured[0])))
+			return kMeasured[z];
+
+		double lo = z, hi = 3.0 * z + 4.0;
+		for (int i = 0; i < 60; ++i)
+		{
+			double a = 0.5 * (lo + hi);
+			if (a / (1.98 + 0.0155 * std::cbrt(a * a)) < z) lo = a; else hi = a;
+		}
+		return static_cast<int>(std::lround(0.5 * (lo + hi)));
+	}
 
 	bool KeyEdge(GLFWwindow* window, int key, bool& wasDown)
 	{
@@ -48,9 +74,9 @@ AtomScene::~AtomScene()
 void AtomScene::PrintControls()
 {
 	std::cout << "\n-- quantum mode --\n"
-		<< "left click adds a proton, shift + left click adds a neutron\n"
-		<< "right click adds an electron, shift + right click adds ten\n"
-		<< "  (aufbau order, Pauli and Hund respected)\n"
+		<< "left click steps up the periodic table, right click steps back down\n"
+		<< "hold shift to jump ten elements at a time\n"
+		<< "  (neutral atom, filled in aufbau order with Pauli and Hund)\n"
 		<< "'I' cycles the view: valence shell -> all shells -> one shell at a time\n"
 		<< "'C' clears back to hydrogen\n"
 		<< "'-' and '=' change how far the nucleus is exaggerated\n"
@@ -73,16 +99,12 @@ void AtomScene::Update(GLFWwindow* window, Camera& camera)
 	bool shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
 		glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
 
+	int step = shift ? 10 : 1;
+
 	bool leftDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 	if (leftDown && !m_leftWasDown)
 	{
-		if (shift)
-		{
-			if (m_neutrons < 200)
-				++m_neutrons;
-		}
-		else if (m_protons < 118)
-			++m_protons;
+		m_element = std::min(m_element + step, 118);
 		m_dirty = true;
 	}
 	m_leftWasDown = leftDown;
@@ -90,9 +112,7 @@ void AtomScene::Update(GLFWwindow* window, Camera& camera)
 	bool rightDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 	if (rightDown && !m_rightWasDown)
 	{
-		// 21 electrons before the first d orbital appears, so shift jumps ten
-		int add = shift ? 10 : 1;
-		m_electrons = std::min(m_electrons + add, 118);
+		m_element = std::max(m_element - step, 1);
 		m_dirty = true;
 	}
 	m_rightWasDown = rightDown;
@@ -111,9 +131,7 @@ void AtomScene::Update(GLFWwindow* window, Camera& camera)
 
 	if (KeyEdge(window, GLFW_KEY_C, m_clearWasDown))
 	{
-		m_protons = 1;
-		m_neutrons = 0;
-		m_electrons = 1;
+		m_element = 1;
 		m_view = kValence;
 		m_framedOnce = false;
 		m_dirty = true;
@@ -145,7 +163,7 @@ void AtomScene::Update(GLFWwindow* window, Camera& camera)
 
 void AtomScene::Rebuild(Camera& camera)
 {
-	m_config = orbital::FillAufbau(m_electrons);
+	m_config = orbital::FillAufbau(m_element);
 
 	if (m_view >= static_cast<int>(m_config.size()))
 		m_view = kValence;
@@ -159,8 +177,13 @@ void AtomScene::Rebuild(Camera& camera)
 
 void AtomScene::BuildSurfaces()
 {
-	std::vector<float> verts;
-	std::vector<float> grid(kGridDim * kGridDim * kGridDim);
+	std::vector<float>& verts = m_surfaceData;
+	verts.clear();
+	m_pieces.clear();
+	m_hovered = -1;
+	m_selectedLabel.clear();
+
+	std::vector<float> grid;
 	std::vector<float> coarse(kCoarseDim * kCoarseDim * kCoarseDim);
 
 	m_cloudExtent = 0.0f;
@@ -172,7 +195,7 @@ void AtomScene::BuildSurfaces()
 			continue;
 
 		const orbital::Subshell& sh = m_config[i];
-		float zeff = orbital::EffectiveCharge(m_config, m_protons, sh.n, sh.l);
+		float zeff = orbital::EffectiveCharge(m_config, m_element, sh.n, sh.l);
 
 		// One table per subshell - every m in it shares the same radial part.
 		orbital::RadialTable table = orbital::MakeRadialTable(sh.n, sh.l, zeff);
@@ -219,17 +242,36 @@ void AtomScene::BuildSurfaces()
 			// this buys 2-3x finer cells for free. The level is an absolute
 			// density, so it carries straight over.
 			float tight = std::min(half, surfaceR * 1.12f);
-			float tightStep = 2.0f * tight / (kGridDim - 1);
 
-			for (int gz = 0; gz < kGridDim; ++gz)
-				for (int gy = 0; gy < kGridDim; ++gy)
-					for (int gx = 0; gx < kGridDim; ++gx)
+			// An orbital with radial nodes is not one surface but several nested
+			// shells. A shell thinner than about two cells cannot be resolved -
+			// its inner and outer faces land in the same cell and the surface
+			// breaks into speckle, which is what 4s and 6s did. Measure the
+			// thinnest shell and raise the grid only for those.
+			int dim = std::min(GridDimFor(table, sh.l, m, level, tight), static_cast<int>(kMaxGridDim));
+			float tightStep = 2.0f * tight / (dim - 1);
+
+			grid.assign(static_cast<size_t>(dim) * dim * dim, 0.0f);
+			for (int gz = 0; gz < dim; ++gz)
+				for (int gy = 0; gy < dim; ++gy)
+					for (int gx = 0; gx < dim; ++gx)
 					{
 						glm::vec3 p(-tight + gx * tightStep, -tight + gy * tightStep, -tight + gz * tightStep);
-						grid[gx + kGridDim * (gy + kGridDim * gz)] = orbital::Density(table, sh.l, m, p);
+						grid[gx + dim * (gy + dim * gz)] = orbital::Density(table, sh.l, m, p);
 					}
 
-			iso::March(grid, kGridDim, tight, level, verts);
+			int before = static_cast<int>(verts.size() / 6);
+			iso::March(grid, dim, tight, level, verts);
+			int after = static_cast<int>(verts.size() / 6);
+
+			if (after > before)
+			{
+				Piece piece;
+				piece.firstVertex = before;
+				piece.vertexCount = after - before;
+				piece.label = std::to_string(sh.n) + "spdf"[sh.l];
+				m_pieces.push_back(piece);
+			}
 		}
 	}
 
@@ -242,6 +284,119 @@ void AtomScene::BuildSurfaces()
 	glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float),
 		verts.empty() ? nullptr : verts.data(), GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+int AtomScene::Neutrons() const
+{
+	return std::max(MassNumber(m_element) - m_element, 0);
+}
+
+float AtomScene::NucleusRadius() const
+{
+	int total = m_element + Neutrons();
+	if (total <= 0)
+		return 0.0f;
+	return m_cloudExtent * m_nucleusFraction * std::cbrt(static_cast<float>(total));
+}
+
+void AtomScene::UpdateHover(GLFWwindow* window, double mouseX, double mouseY, Camera& camera)
+{
+	m_hovered = -1;
+	m_selectedLabel.clear();
+
+	glm::vec3 origin = camera.GetPosition();
+	glm::vec3 dir = picking::MouseRay(window, mouseX, mouseY,
+		camera.GetProjectionMatrix(), camera.GetViewMatrix());
+
+	// Same nearest-hit-wins rule the gravity mode uses, against triangles
+	// instead of spheres - so you can see and select through the gap between
+	// two lobes to whatever sits behind them.
+	float nearest = std::numeric_limits<float>::max();
+
+	// The nucleus really is a sphere, so it uses the sphere test unchanged.
+	float nucleusR = NucleusRadius();
+	if (nucleusR > 0.0f)
+	{
+		float t = picking::RaySphere(origin, dir, glm::vec3(0.0f), nucleusR);
+		if (t >= 0.0f)
+		{
+			nearest = t;
+			m_hovered = kNucleus;
+		}
+	}
+
+	for (size_t p = 0; p < m_pieces.size(); ++p)
+	{
+		const Piece& piece = m_pieces[p];
+		for (int v = 0; v + 2 < piece.vertexCount; v += 3)
+		{
+			const float* base = &m_surfaceData[(static_cast<size_t>(piece.firstVertex) + v) * 6];
+			glm::vec3 a(base[0], base[1], base[2]);
+			glm::vec3 b(base[6], base[7], base[8]);
+			glm::vec3 c(base[12], base[13], base[14]);
+
+			float t = picking::RayTriangle(origin, dir, a, b, c);
+			if (t >= 0.0f && t < nearest)
+			{
+				nearest = t;
+				m_hovered = static_cast<int>(p);
+			}
+		}
+	}
+
+	if (m_hovered == kNucleus)
+		m_selectedLabel = "nucleus";
+	else if (m_hovered >= 0)
+		m_selectedLabel = m_pieces[m_hovered].label;
+}
+
+// How fine a grid this orbital needs. Bands are found from the radial part
+// alone, using the threshold that applies along the direction where the angular
+// part is strongest - that is where a shell is at its thickest, so it is the
+// honest measure of whether the bulk of it can be resolved.
+int AtomScene::GridDimFor(const orbital::RadialTable& table, int l, int m, float level, float tight) const
+{
+	float maxY2 = 0.0f;
+	for (int a = 0; a <= 32; ++a)
+	{
+		float ct = -1.0f + 2.0f * a / 32.0f;
+		float st = std::sqrt(std::max(0.0f, 1.0f - ct * ct));
+		for (int b = 0; b < 64; ++b)
+		{
+			float ph = 6.2831853f * b / 64.0f;
+			float y = orbital::RealHarmonic(l, m, glm::vec3(st * std::cos(ph), st * std::sin(ph), ct));
+			maxY2 = std::max(maxY2, y * y);
+		}
+	}
+
+	if (maxY2 <= 0.0f)
+		return kGridDim;
+
+	float radialThreshold = level / maxY2; // R^2 has to clear this to be inside
+
+	const int kScan = 4096;
+	float thinnest = 2.0f * tight;
+	bool inside = false;
+	float start = 0.0f;
+
+	for (int i = 0; i <= kScan; ++i)
+	{
+		float r = tight * i / kScan;
+		float rad = table.Lookup(r);
+		bool now = rad * rad >= radialThreshold;
+
+		if (now && !inside) { start = r; inside = true; }
+		else if (!now && inside) { thinnest = std::min(thinnest, r - start); inside = false; }
+	}
+	if (inside)
+		thinnest = std::min(thinnest, tight - start);
+
+	if (thinnest <= 0.0f)
+		return kMaxGridDim;
+
+	// aim for three cells across the thinnest shell
+	int wanted = static_cast<int>(std::ceil(2.0f * tight / (thinnest / 3.0f))) + 1;
+	return std::max(wanted, static_cast<int>(kGridDim));
 }
 
 int AtomScene::ResolvedView() const
@@ -266,13 +421,12 @@ void AtomScene::FrameCamera(Camera& camera, bool force)
 
 void AtomScene::Report()
 {
-	int charge = m_protons - m_electrons;
+	int neutrons = Neutrons();
 
-	std::string head = std::string(orbital::ElementSymbol(m_protons))
-		+ "  Z=" + std::to_string(m_protons)
-		+ " N=" + std::to_string(m_neutrons)
-		+ " A=" + std::to_string(m_protons + m_neutrons)
-		+ "  charge=" + (charge > 0 ? "+" : "") + std::to_string(charge);
+	std::string head = std::string(orbital::ElementSymbol(m_element))
+		+ "  Z=" + std::to_string(m_element)
+		+ " N=" + std::to_string(neutrons)
+		+ " A=" + std::to_string(m_element + neutrons);
 
 	std::string config = orbital::ConfigString(m_config);
 	if (config.empty())
@@ -307,12 +461,14 @@ void AtomScene::Render(Camera& camera)
 
 	// R grows as A^(1/3), but measured against the cloud rather than in absolute
 	// units, so a contracting cloud can never be swallowed by its own nucleus.
-	int total = m_protons + m_neutrons;
-	if (total > 0)
+	float nucleusR = NucleusRadius();
+	if (nucleusR > 0.0f)
 	{
 		m_nucleus.SetPosition(glm::vec3(0.0f));
-		m_nucleus.SetMass(m_cloudExtent * m_nucleusFraction * std::cbrt(static_cast<float>(total)));
-		m_nucleus.SetColor(kColor);
+		m_nucleus.SetMass(nucleusR);
+		m_nucleus.SetColor(m_hovered == kNucleus
+			? glm::min(kColor * 1.8f + glm::vec3(0.35f), glm::vec3(1.0f))
+			: kColor);
 		m_nucleus.UpdateSize();
 		m_nucleus.DrawObject(modelLoc, colorLoc);
 	}
@@ -325,6 +481,31 @@ void AtomScene::Render(Camera& camera)
 	glUniform3fv(colorLoc, 1, glm::value_ptr(kColor));
 
 	glBindVertexArray(m_surfaceVAO);
-	glDrawArrays(GL_TRIANGLES, 0, m_surfaceVerts);
+
+	if (m_hovered < 0 || m_hovered >= static_cast<int>(m_pieces.size()))
+	{
+		glDrawArrays(GL_TRIANGLES, 0, m_surfaceVerts);
+	}
+	else
+	{
+		// Everything except the hovered orbital, then that one brighter. Three
+		// ranges rather than a second pass, so there is no depth fighting.
+		const Piece& piece = m_pieces[m_hovered];
+		glm::vec3 lit = glm::min(kColor * 1.8f + glm::vec3(0.35f), glm::vec3(1.0f));
+
+		if (piece.firstVertex > 0)
+			glDrawArrays(GL_TRIANGLES, 0, piece.firstVertex);
+
+		glUniform3fv(colorLoc, 1, glm::value_ptr(lit));
+		glDrawArrays(GL_TRIANGLES, piece.firstVertex, piece.vertexCount);
+
+		int after = piece.firstVertex + piece.vertexCount;
+		if (after < m_surfaceVerts)
+		{
+			glUniform3fv(colorLoc, 1, glm::value_ptr(kColor));
+			glDrawArrays(GL_TRIANGLES, after, m_surfaceVerts - after);
+		}
+	}
+
 	glBindVertexArray(0);
 }

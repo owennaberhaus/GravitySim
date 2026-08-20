@@ -165,6 +165,7 @@
     <ClInclude Include="src\object.h" />
     <ClInclude Include="src\orbital.h" />
     <ClInclude Include="src\path.h" />
+    <ClInclude Include="src\picking.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\text.h" />
     <ClInclude Include="src\timer.h" />
