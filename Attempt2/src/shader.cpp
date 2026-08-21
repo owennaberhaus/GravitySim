@@ -49,7 +49,7 @@ std::string fragmentShader =
 "    color = vec4(u_color, 1.0);\n"
 "}\n";
 
-// Lit fill Without a shading term a solid color sphere was indistinguishable from a flat disc.
+// Lit fill Without a shading term a solid color sphere was indistinguishable from a flat disc this is the source of light for the 3d objects HUGE UPDATE
 std::string fragmentShader3D =
 "#version 330 core\n"
 "\n"
@@ -97,7 +97,7 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
     glGetShaderiv(id, GL_COMPILE_STATUS, &result);
     if (result == GL_FALSE)
     {
-        // This used to query GL_COMPILE_STATUS for the length and then throw the result away
+        // query GL_COMPILE_STATUS for the length and then throw the result away
         int length = 0;
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         std::vector<char> message(length > 0 ? length : 1);

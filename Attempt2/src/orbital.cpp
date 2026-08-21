@@ -4,7 +4,7 @@
 
 namespace
 {
-	// Madelung order: sort by n+l, ties broken by n.
+	// Madelung order: sort by n+l, ties broken by n
 	const int kOrder[][2] = {
 		{1,0},{2,0},{2,1},{3,0},{3,1},{4,0},{3,2},{4,1},{5,0},{4,2},
 		{5,1},{6,0},{4,3},{5,2},{6,1},{7,0},{5,3},{6,2},{7,1}
@@ -19,7 +19,7 @@ namespace
 		return f;
 	}
 
-	// Generalized Laguerre L_k^alpha(x) by recurrence.
+	// Generalized Laguerre L_k^alpha(x) by recurrence
 	double Laguerre(int k, double alpha, double x)
 	{
 		double prev = 0.0;
@@ -33,8 +33,7 @@ namespace
 		return cur;
 	}
 
-	// Slater group ordering: 1s | 2s2p | 3s3p | 3d | 4s4p | 4d | 4f | ...
-	// Key is (n, 0) for s/p and (n, l) for d/f, compared lexicographically.
+	// Slater group ordering: 1s | 2s2p | 3s3p | 3d | 4s4p | 4d | 4f | ...    Key is (n, 0) for s/p and (n, l) for d/f, compared lexicographically
 	int GroupClass(int l) { return l <= 1 ? 0 : l; }
 
 	bool SameGroup(int nA, int lA, int nB, int lB)
@@ -118,8 +117,7 @@ float EffectiveCharge(const std::vector<Subshell>& config, int protons, int n, i
 {
 	double s = 0.0;
 
-	// A Slater group can span two subshells (2s2p, 3s3p, ...), so the electron
-	// only excludes itself once, from the group total.
+	// A Slater group can span two subshells (2s2p, 3s3p, ...)
 	int groupCount = 0;
 	for (size_t i = 0; i < config.size(); ++i)
 		if (SameGroup(config[i].n, config[i].l, n, l))

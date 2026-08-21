@@ -52,7 +52,7 @@ private:
 	glm::mat4 m_view{ 1.0f };
 	glm::mat4 m_projection{ 1.0f };
 
-	// The camera keeps its own clock. It used to call glfwSetTime(0) every frame, quietly resetting GLFW's global timer for the whole program.
+	// The camera keeps its own clock. It used to call glfwSetTime(0) every frame, quietly resetting GLFW's global timer for the whole program prolly inoptimal
 	Timer m_inputTimer{};
 
 	unsigned int m_program{ 0 }; // bound before uploading, so the uniforms land on the right program

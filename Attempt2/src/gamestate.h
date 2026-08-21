@@ -61,7 +61,7 @@ private:
 	// window state || world dimension
 	int m_width{ 0 };  // used for projection matrix scaling
 	int m_height{ 0 };
-	float m_worldLeft{ 0.0f }; // absolute positions of window - soon depricated
+	float m_worldLeft{ 0.0f }; // absolute positions of window - soon depricated hopefully it sucks
 	float m_worldRight{ 0.0f };
 	float m_worldBottom{ 0.0f };
 	float m_worldTop{ 0.0f };

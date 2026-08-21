@@ -52,6 +52,7 @@ namespace
 
 	// Liberation Mono Bold, 8 wide by 14 tall, one bit per pixel.
 	// Row-major per glyph, ASCII 32 to 126, bit 0x80 is the leftmost pixel.
+	/* huge shout out claude for this data lmao */
 	const unsigned char kFont[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  //  
 	0x00, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00,  // !
@@ -264,8 +265,7 @@ void TextRenderer::Push(std::vector<float>& out, const std::string& text, float 
 		float u0 = (code - kFirst) * du;
 		float u1 = u0 + du;
 
-		// Two triangles. Half a texel of inset keeps neighbouring glyphs from
-		// bleeding in under nearest sampling.
+		// Two triangles. Half a texel of inset keeps neighbouring glyphs from bleeding in under nearest sampling
 		const float inset = 0.25f / (kGlyphW * kCount);
 		u0 += inset;
 		u1 -= inset;
@@ -303,8 +303,7 @@ void TextRenderer::Draw(const std::string& text, float x, float y, float scale, 
 
 	GLsizei count = static_cast<GLsizei>(verts.size() / 4);
 
-	// A dark pass one pixel down and right, so the text stays readable on top of
-	// a bright orbital as well as on the background.
+	// A dark pass one pixel down and right, so the text stays readable on top of bright orbital as well as on the background.
 	glUniform3f(m_colorLoc, 0.0f, 0.0f, 0.0f);
 	std::vector<float> shadow;
 	shadow.reserve(verts.size());

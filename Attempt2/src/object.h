@@ -25,11 +25,11 @@ public:
 
     GLuint VAO{};
     GLuint VBO{};
-    GLuint EBO{};          // index buffer - a UV sphere can't be drawn without one
+    GLuint EBO{}; // index buffer - keeps things local
     GLsizei vertexCount{};
     GLsizei indexCount{};
 
-    Object(const Object&) = delete;            // disable copy constructor
+    Object(const Object&) = delete; // disable copy constructor
     Object& operator=(const Object&) = delete; // disable copy assignment
     Object(Object&& other) noexcept;
     Object(float x, float y, float z, float vx, float vy, float vz, float m, bool movable = true,
@@ -88,7 +88,7 @@ private:
     float m_velY{};
     float m_velZ{};
     bool m_movable{};
-	std::vector<float> m_vertices{};  // interleaved: px,py,pz, nx,ny,nz for each vertex
+	std::vector<float> m_vertices{}; // interleaved: px,py,pz, nx,ny,nz for each vertex
     std::vector<GLuint> m_indices{};
     const float m_GRAVITY = -0.000000f; // negative Y = down
     glm::mat4 m_model{ 1.0f };

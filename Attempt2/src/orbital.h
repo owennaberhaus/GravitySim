@@ -13,8 +13,7 @@ namespace orbital
 		int count;
 	};
 
-	// R_nl tabulated on [0, rMax], so the density field can be evaluated with a
-	// lookup instead of running the Laguerre recurrence at every grid point.
+	// R_nl tabulated on [0, rMax], so the density field can be evaluated with a lookup instead of running the Laguerre recurrence at every grid point.
 	struct RadialTable
 	{
 		std::vector<float> value;

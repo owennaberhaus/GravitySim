@@ -11,11 +11,7 @@ namespace
 {
 	const glm::vec3 kColor(0.45f, 0.60f, 1.00f);
 
-	// Mass number of the isotope to show. Measured values up to calcium; past
-	// that, the most stable isobar from the semi-empirical mass formula,
-	//   Z(A) = A / (1.98 + 0.0155 * A^(2/3))
-	// inverted for A. Within about one mass unit of the real nuclide, which
-	// only moves the drawn nucleus radius by a fraction of a percent.
+	// Mass number of the isotope to show. Measured values up to calcium past that, the most stable isobar from the semi-empirical mass formula, Z(A) = A / (1.98 + 0.0155 * A^(2/3))
 	int MassNumber(int z)
 	{
 		static const int kMeasured[] = {
@@ -49,8 +45,7 @@ AtomScene::AtomScene(Shader& shader)
 	: m_shader(&shader),
 	m_nucleus(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, false, kColor, false)
 {
-	// Same interleaved position + normal layout the Object mesh uses, so the
-	// existing lit shader draws these with no changes at all.
+	// Same interleaved position and normal layout the object mesh uses
 	glGenVertexArrays(1, &m_surfaceVAO);
 	glBindVertexArray(m_surfaceVAO);
 	glGenBuffers(1, &m_surfaceVBO);
@@ -87,9 +82,7 @@ void AtomScene::PrintControls()
 
 void AtomScene::Update(GLFWwindow* window, Camera& camera)
 {
-	// Scroll to zoom, exactly as the gravity mode does it. This used to be
-	// drained only by Clicker::MouseControl, which quantum mode never reaches,
-	// so the wheel did nothing here and then dumped all at once on tab back.
+	// Scroll to zoom
 	if (g_scrollDelta != 0.0f)
 	{
 		camera.IncRadius(g_scrollDelta);
@@ -117,7 +110,7 @@ void AtomScene::Update(GLFWwindow* window, Camera& camera)
 	}
 	m_rightWasDown = rightDown;
 
-	// valence -> all -> first subshell -> ... -> last -> valence
+	// valence then all then first subshell ... then last then valence
 	if (KeyEdge(window, GLFW_KEY_I, m_isolateWasDown))
 	{
 		if (m_view == kValence)       m_view = kAll;
@@ -211,8 +204,7 @@ void AtomScene::BuildSurfaces()
 
 			int m = k - sh.l;
 
-			// Pass one, coarse, over the full 99.5% box. Only used to find the
-			// isolevel and how far out the surface actually reaches.
+			// Pass one, coarse, over the full 99.5% box. Only used to find the isolevel and how far out the surface actually reaches.
 			float coarseStep = 2.0f * half / (kCoarseDim - 1);
 			for (int gz = 0; gz < kCoarseDim; ++gz)
 				for (int gy = 0; gy < kCoarseDim; ++gy)
@@ -237,17 +229,10 @@ void AtomScene::BuildSurfaces()
 			if (surfaceR <= 0.0f)
 				continue;
 
-			// Pass two, full resolution over just the part that holds the
-			// surface. The 99.5% box spends half its radius on empty tail, so
-			// this buys 2-3x finer cells for free. The level is an absolute
-			// density, so it carries straight over.
+			// Pass two, full resolution over just the part that holds the surface
 			float tight = std::min(half, surfaceR * 1.12f);
 
-			// An orbital with radial nodes is not one surface but several nested
-			// shells. A shell thinner than about two cells cannot be resolved -
-			// its inner and outer faces land in the same cell and the surface
-			// breaks into speckle, which is what 4s and 6s did. Measure the
-			// thinnest shell and raise the grid only for those.
+			// An orbital with radial nodes is not one surface but several nested shells.
 			int dim = std::min(GridDimFor(table, sh.l, m, level, tight), static_cast<int>(kMaxGridDim));
 			float tightStep = 2.0f * tight / (dim - 1);
 
@@ -308,9 +293,7 @@ void AtomScene::UpdateHover(GLFWwindow* window, double mouseX, double mouseY, Ca
 	glm::vec3 dir = picking::MouseRay(window, mouseX, mouseY,
 		camera.GetProjectionMatrix(), camera.GetViewMatrix());
 
-	// Same nearest-hit-wins rule the gravity mode uses, against triangles
-	// instead of spheres - so you can see and select through the gap between
-	// two lobes to whatever sits behind them.
+	// avoid hitting multiple surfaces at once 
 	float nearest = std::numeric_limits<float>::max();
 
 	// The nucleus really is a sphere, so it uses the sphere test unchanged.
@@ -350,10 +333,7 @@ void AtomScene::UpdateHover(GLFWwindow* window, double mouseX, double mouseY, Ca
 		m_selectedLabel = m_pieces[m_hovered].label;
 }
 
-// How fine a grid this orbital needs. Bands are found from the radial part
-// alone, using the threshold that applies along the direction where the angular
-// part is strongest - that is where a shell is at its thickest, so it is the
-// honest measure of whether the bulk of it can be resolved.
+// How fine a grid this orbital needs
 int AtomScene::GridDimFor(const orbital::RadialTable& table, int l, int m, float level, float tight) const
 {
 	float maxY2 = 0.0f;
@@ -408,9 +388,7 @@ int AtomScene::ResolvedView() const
 
 void AtomScene::FrameCamera(Camera& camera, bool force)
 {
-	// Fit once on entry, then never again unless 'F' asks for it. Re-fitting on
-	// every rebuild rescaled the camera by exactly the factor the cloud
-	// contracted, so adding a proton looked like it did nothing at all.
+	// Fit once on entry, then never again unless 'F' asks for it. 
 	if (m_framedOnce && !force)
 		return;
 
@@ -459,8 +437,7 @@ void AtomScene::Render(Camera& camera)
 	int modelLoc = m_shader->GetModelLoc();
 	int colorLoc = m_shader->GetColorLoc();
 
-	// R grows as A^(1/3), but measured against the cloud rather than in absolute
-	// units, so a contracting cloud can never be swallowed by its own nucleus.
+	// R grows as A^(1/3), but measured against the cloud rather than in absolute units, so a contracting cloud can never be swallowed by its own nucleus.
 	float nucleusR = NucleusRadius();
 	if (nucleusR > 0.0f)
 	{
@@ -488,8 +465,7 @@ void AtomScene::Render(Camera& camera)
 	}
 	else
 	{
-		// Everything except the hovered orbital, then that one brighter. Three
-		// ranges rather than a second pass, so there is no depth fighting.
+		// Everything except the hovered orbital then that one brighter
 		const Piece& piece = m_pieces[m_hovered];
 		glm::vec3 lit = glm::min(kColor * 1.8f + glm::vec3(0.35f), glm::vec3(1.0f));
 

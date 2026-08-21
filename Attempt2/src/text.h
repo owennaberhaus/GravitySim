@@ -5,14 +5,7 @@
 #include <string>
 #include <vector>
 
-// Screen-space text overlay.
-//
-// Nothing here touches the camera. Positions are given in pixels measured from
-// the window edges and drawn through an orthographic projection, so text stays
-// pinned where you put it no matter how the view moves.
-//
-// The font is a 1-bit 8x14 bitmap baked into text.cpp - no font file to ship
-// and no path to go wrong.
+// Screen-space text overlay. Positions all relative to window as opposed to camera which was jerky and slow
 class TextRenderer
 {
 public:
@@ -24,8 +17,7 @@ public:
 	TextRenderer(const TextRenderer&) = delete;
 	TextRenderer& operator=(const TextRenderer&) = delete;
 
-	// Wrap draw calls in a Begin/End pair. Begin takes the framebuffer size and
-	// turns depth testing off; End puts it back the way it was.
+	// Wrap draw calls in a Begin/End pair
 	void Begin(int width, int height);
 	void End();
 
@@ -33,8 +25,6 @@ public:
 	void Draw(const std::string& text, float x, float y,
 		float scale = 2.0f, glm::vec3 color = glm::vec3(1.0f));
 
-	// Pinned to a corner. `line` steps away from that corner, so line 0 is
-	// closest to it and higher numbers stack inwards.
 	void DrawAnchored(const std::string& text, Anchor anchor, int line,
 		float scale = 2.0f, glm::vec3 color = glm::vec3(1.0f), float margin = 12.0f);
 
@@ -47,8 +37,8 @@ public:
 private:
 	static const int kGlyphW = 8;
 	static const int kGlyphH = 14;
-	static const int kFirst = 32;   // space
-	static const int kCount = 95;   // through '~'
+	static const int kFirst = 32; // space
+	static const int kCount = 95; // through
 
 	void Push(std::vector<float>& out, const std::string& text, float x, float y, float scale);
 

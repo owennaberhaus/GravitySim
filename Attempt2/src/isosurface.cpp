@@ -4,9 +4,7 @@
 
 namespace
 {
-	// A cube split into six tetrahedra sharing the 0-6 diagonal. Tetrahedra
-	// have no ambiguous cases, which is why this is used instead of marching
-	// cubes - the whole case table fits on a screen and can be checked by hand.
+	// A cube split into six tetrahedra sharing the 0-6 diagonal. 
 	const int kCorner[8][3] = {
 		{0,0,0},{1,0,0},{1,1,0},{0,1,0},{0,0,1},{1,0,1},{1,1,1},{0,1,1}
 	};
@@ -18,8 +16,7 @@ namespace
 	// Tetrahedron edges, as pairs of local vertex indices.
 	const int kEdge[6][2] = { {0,1},{1,2},{2,0},{0,3},{1,3},{2,3} };
 
-	// Which edges the surface crosses, per inside-mask. Bit v means vertex v is
-	// inside. Entries come in groups of three, -1 ends the list.
+	// Which edges the surface crosses, per inside-mask. Bit v means vertex v is inside. Entries come in groups of three, -1 ends the list.
 	const int kCase[16][7] = {
 		{-1,-1,-1,-1,-1,-1,-1},
 		{ 0, 2, 3,-1,-1,-1,-1},
@@ -67,12 +64,7 @@ float LevelForFraction(const std::vector<float>& grid, float fraction)
 		if (acc < want)
 			continue;
 
-		// Never return a value that appears in the grid. A spherically
-		// symmetric field puts thousands of samples at the identical value, and
-		// landing exactly on one splits that tied set on floating point noise -
-		// the surface comes out shredded into rings and fragments. Drop the
-		// level into the gap below the crossing sample so the inside test is
-		// unambiguous for every one of them.
+		// Never return a value that appears in the grid
 		for (size_t j = i + 1; j < sorted.size(); ++j)
 			if (sorted[j] < sorted[i])
 				return 0.5f * (sorted[i] + sorted[j]);
@@ -134,11 +126,7 @@ void March(const std::vector<float>& grid, int dim, float half, float level, std
 						int a = kTet[t][kEdge[list[e]][0]];
 						int b = kTet[t][kEdge[list[e]][1]];
 
-						// Always walk an edge from its lower grid index to its
-						// higher one. Neighbouring cells share edges but reach
-						// them in opposite order, and the two interpolations
-						// differ in the last bits - enough to leave hairline
-						// seams. Fixing the direction makes them bit-identical.
+						// Always walk an edge from its lower grid index to its higher one. 
 						if (index[a] > index[b])
 							std::swap(a, b);
 

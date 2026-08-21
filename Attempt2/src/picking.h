@@ -3,15 +3,11 @@
 #include <glm.hpp>
 #include <cmath>
 
-// Mouse picking shared by both modes. The gravity sim casts against object
-// spheres, the atom casts against orbital triangles, but the ray itself and the
-// nearest-hit-wins rule are the same in both.
+// Mouse picking shared by both modes 
 namespace picking
 {
 	// World-space direction of the ray under the cursor.
-	//
-	// The cursor is in WINDOW coordinates, so it must be normalised against the
-	// window size - not the framebuffer size, which differs on a scaled display.
+	// The cursor is in WINDOW coordinates, so it must be normalised against the window size - not the framebuffer size, which differs on a scaled display.
 	inline glm::vec3 MouseRay(GLFWwindow* window, double mouseX, double mouseY,
 		const glm::mat4& projection, const glm::mat4& view)
 	{
@@ -33,8 +29,7 @@ namespace picking
 		return glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
 	}
 
-	// Distance along the ray to the nearest intersection with the sphere, or a
-	// negative value if it never hits in front of the origin.
+	// Distance along the ray to the nearest intersection with the sphere, or a negative value if it never hits in front of the origin.
 	inline float RaySphere(const glm::vec3& rayOrigin, const glm::vec3& rayDir,
 		const glm::vec3& sphereCenter, float sphereRadius)
 	{
@@ -55,11 +50,10 @@ namespace picking
 
 		if (t0 > 0.0f) return t0; // normal case: entering the sphere
 		if (t1 > 0.0f) return t1; // camera is inside the sphere
-		return -1.0f;             // wholly behind the camera
+		return -1.0f; // wholly behind the camera
 	}
 
-	// Same contract as RaySphere, for one triangle. Moller-Trumbore, taking
-	// either winding since the orbital meshes are not consistently wound.
+	// Same contract as RaySphere for one triangle
 	inline float RayTriangle(const glm::vec3& rayOrigin, const glm::vec3& rayDir,
 		const glm::vec3& a, const glm::vec3& b, const glm::vec3& c)
 	{

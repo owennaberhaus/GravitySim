@@ -5,7 +5,7 @@
 int main(void)
 {
 
-    // In gamestate constructor, initialize all the things that need to be initialized for the game to run (window, opengl, etc)
+    // initialize all the things that need to be initialized for the game to run
     if (!glfwInit())
     {
         std::cerr << "Failed to initialize GLFW\n";
@@ -38,7 +38,7 @@ int main(void)
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(game.GetWindow()))
     {
-        /* Render here */
+        // Render here
         game.update();
         game.render();
         game.Pause();

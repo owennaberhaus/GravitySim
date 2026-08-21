@@ -33,11 +33,11 @@ void Camera::HandleInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
 		m_orientation = m_orientation * glm::angleAxis(-step, glm::vec3(0.0f, 0.0f, 1.0f));
 
-	// snap back to level - handy once you've rolled somewhere strange
+	// snap back to level like center
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
 		m_orientation = glm::quat(glm::vec3(0.0f));
 
-	// renormalising quaternian each frame
+	// renormalising quaternian each frame - this math wicked brah
 	m_orientation = glm::normalize(m_orientation);
 }
 
@@ -61,7 +61,7 @@ void Camera::UpdateProjectionMatrix(int width, int height)
 
 void Camera::UpdateViewMatrix()
 {
-	// Built straight from the quaternion
+	// Built straight from quaternion
 	m_view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -m_radius))
 		* glm::mat4_cast(glm::conjugate(m_orientation))
 		* glm::translate(glm::mat4(1.0f), -m_target);

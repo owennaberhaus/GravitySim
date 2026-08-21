@@ -175,7 +175,7 @@ void GameState::Pause()
 
 void GameState::DrawHud()
 {
-    // Smoothed so the number is readable rather than flickering every frame.
+    // Smoothed so the number is readable rather than flickering every frame
     if (m_deltaTime > 0.0f)
         m_fps = m_fps * 0.94f + (1.0f / m_deltaTime) * 0.06f;
 
@@ -224,9 +224,7 @@ void GameState::DrawSliderLabels(const glm::vec3& color)
     if (m_height <= 0)
         return;
 
-    // The slider orbs are drawn through the menu's ortho projection, which
-    // spans -aspect..aspect across and -1..1 down. Both axes work out to the
-    // same height/2 pixels per unit, so one scale converts either one.
+    // The slider orbs are drawn through the menu's ortho projection, which spans -aspect to aspect across and -1..1 down
     const float unit = m_height * 0.5f;
     const float aspect = static_cast<float>(m_width) / static_cast<float>(m_height);
     const float labelScale = 1.5f;
