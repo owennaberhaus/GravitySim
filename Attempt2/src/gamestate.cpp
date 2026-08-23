@@ -71,8 +71,13 @@ void GameState::render()
         return;
     }
 
-    glUseProgram(m_shader.GetShader2D());
-    m_menu.UpdateAndDrawMenu(m_shader.GetModelLoc2D(), m_shader.GetColorLoc2D(), m_shader.GetProjLoc2D(), m_window, m_deltaTime, m_width, m_height);
+    // The slider orbs are a control surface. With input off they are decoration
+    // that covers part of the scene, so mobile skips them entirely.
+    if (!presets::MobileMode())
+    {
+        glUseProgram(m_shader.GetShader2D());
+        m_menu.UpdateAndDrawMenu(m_shader.GetModelLoc2D(), m_shader.GetColorLoc2D(), m_shader.GetProjLoc2D(), m_window, m_deltaTime, m_width, m_height);
+    }
 
     ApplyGravity2(m_objects, m_deltaTime, m_menu);
     glUseProgram(m_shader.GetShader());
@@ -129,6 +134,25 @@ void GameState::update()
     if (tabPressed && !m_tabWasPressed)
         m_mode = (m_mode == Mode::Classical) ? Mode::Quantum : Mode::Classical;
     m_tabWasPressed = tabPressed;
+
+    // On a touch device the sim runs itself: no spawning, no sliders, no camera
+    // keys. One tap advances the scene, and that is the whole interface.
+    if (presets::MobileMode())
+    {
+        bool quantum = (m_mode == Mode::Quantum);
+        presets::UpdateMobile(m_window, m_deltaTime, quantum, m_objects, m_camera, m_atom);
+        m_mode = quantum ? Mode::Quantum : Mode::Classical;
+
+        // The camera already built its view matrix above, before the spin moved
+        // it. Rebuild so the frame that renders is the frame that was aimed.
+        m_camera.Update(m_window, m_width, m_height);
+
+        // Refresh rather than Update: the atom still has to rebuild when the
+        // element changes, but it must not read the mouse.
+        if (m_mode == Mode::Quantum)
+            m_atom.Refresh(m_camera);
+        return;
+    }
 
     // The number row loads canned scenes. Handled before either mode runs so a
     // quantum preset marks the atom dirty in time for this frame's rebuild.
@@ -225,7 +249,8 @@ void GameState::DrawHud()
         char buffer[128];
         snprintf(buffer, sizeof(buffer), "objects %d   G=%.2f", static_cast<int>(m_objects.size()), M_G);
 
-        DrawSliderLabels(label);
+        if (!presets::MobileMode())
+            DrawSliderLabels(label);
         m_text.DrawAnchored("GRAVITY", TextRenderer::Anchor::TopRight, 0, scale, label);
         m_text.DrawAnchored(buffer, TextRenderer::Anchor::TopRight, 1, scale, value);
 
@@ -240,8 +265,15 @@ void GameState::DrawHud()
     char fps[32];
     snprintf(fps, sizeof(fps), "%.0f fps", m_fps);
     m_text.DrawAnchored(fps, TextRenderer::Anchor::BottomRight, 0, 1.5f, label);
-    m_text.DrawAnchored("tab switches mode", TextRenderer::Anchor::BottomLeft, 0, 1.5f, label);
-    m_text.DrawAnchored("1-9 presets, 0 clears", TextRenderer::Anchor::BottomLeft, 1, 1.5f, label);
+    if (presets::MobileMode())
+    {
+        m_text.DrawAnchored("tap for the next scene", TextRenderer::Anchor::BottomLeft, 0, 1.5f, label);
+    }
+    else
+    {
+        m_text.DrawAnchored("tab switches mode", TextRenderer::Anchor::BottomLeft, 0, 1.5f, label);
+        m_text.DrawAnchored("1-9 presets, 0 clears", TextRenderer::Anchor::BottomLeft, 1, 1.5f, label);
+    }
 
     m_text.End();
 }

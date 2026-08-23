@@ -32,6 +32,17 @@ namespace
 	float s_resetAfter = 0.0f;
 	bool s_down[10] = { false };
 
+	// Mobile turntable. View() records the elevation each preset asked for so the
+	// spin can yaw around world up without flattening that tilt.
+	float s_elevation = 0.0f;
+	float s_yaw = 0.0f;
+
+	int s_step = -1;              // -1 means nothing shown yet
+	float s_tapLock = 0.0f;
+	const float kTapCooldown = 1.0f;   // a fast double tap must not skip a scene
+	const float kSpinDegrees = 9.0f;   // a full turn every forty seconds
+	const int kSteps = 18;             // nine gravity scenes interleaved with nine atoms
+
 	void Add(std::vector<std::unique_ptr<Object>>& v, glm::vec3 p, glm::vec3 vel,
 		float mass, bool movable = true, bool gravitates = true)
 	{
@@ -43,6 +54,8 @@ namespace
 	// elevation degrees. Zero elevation is face on, which suits planar figures.
 	void View(Camera& camera, float distance, float elevation)
 	{
+		s_elevation = elevation;
+		s_yaw = 0.0f;
 		camera.SetRadius(distance);
 		camera.SetOrientation(glm::angleAxis(glm::radians(-elevation), glm::vec3(1.0f, 0.0f, 0.0f)));
 	}
@@ -326,6 +339,9 @@ void Load(int index, bool quantum, std::vector<std::unique_ptr<Object>>& objects
 	{
 		atom.SetElement(kAtomZ[index]);
 		s_name = kAtomNames[index];
+		// AtomScene refits the distance itself, so only the tilt is set here.
+		s_elevation = 18.0f;
+		s_yaw = 0.0f;
 		return;
 	}
 
@@ -375,6 +391,66 @@ bool Update(GLFWwindow* window, float delta, bool quantum,
 	}
 
 	return false;
+}
+
+bool MobileMode()
+{
+#ifdef __EMSCRIPTEN__
+	// Asked once and cached. pointer:coarse means the primary pointing device is
+	// imprecise - a finger or a stylus. It reads false on a touchscreen laptop
+	// with a trackpad attached, which is exactly right, and unlike a width
+	// breakpoint it does not call a narrow desktop window a phone.
+	static int cached = -1;
+	if (cached < 0)
+		cached = EM_ASM_INT({ return (Module.gsMobile | 0); }) ? 1 : 0;
+	return cached != 0;
+#else
+	return false;
+#endif
+}
+
+void UpdateMobile(GLFWwindow* window, float delta, bool& quantum,
+	std::vector<std::unique_ptr<Object>>& objects, Camera& camera, AtomScene& atom)
+{
+	(void)window;
+	s_age += delta;
+	if (s_tapLock > 0.0f)
+		s_tapLock -= delta;
+
+	// Taps are counted in JS and drained here. Going through pointerdown rather
+	// than the GLFW shim covers touch, pen and mouse with one path, and does not
+	// depend on how a given emscripten version maps touches onto mouse buttons.
+	int taps = 0;
+#ifdef __EMSCRIPTEN__
+	taps = EM_ASM_INT({
+		var n = Module.gsTaps | 0;
+		Module.gsTaps = 0;
+		return n;
+	});
+#endif
+
+	if (s_step < 0 || (taps > 0 && s_tapLock <= 0.0f))
+	{
+		s_step = (s_step + 1) % kSteps;
+
+		// Even steps are a gravity scene, odd steps the atom that follows it, so a
+		// visitor who only taps twice has still seen both halves of the project.
+		quantum = (s_step % 2) != 0;
+		Load(s_step / 2 + 1, quantum, objects, camera, atom);
+		s_tapLock = kTapCooldown;
+	}
+	else if (!quantum && s_resetAfter > 0.0f && s_age >= s_resetAfter && s_current > 0)
+	{
+		// The figure eight and the cluster wear out. Reload them, but carry the
+		// spin across so the camera does not snap back to its start angle.
+		float keep = s_yaw;
+		Load(s_current, false, objects, camera, atom);
+		s_yaw = keep;
+	}
+
+	s_yaw += glm::radians(kSpinDegrees) * delta;
+	camera.SetOrientation(glm::angleAxis(s_yaw, glm::vec3(0.0f, 1.0f, 0.0f))
+		* glm::angleAxis(glm::radians(-s_elevation), glm::vec3(1.0f, 0.0f, 0.0f)));
 }
 
 const char* CurrentName()

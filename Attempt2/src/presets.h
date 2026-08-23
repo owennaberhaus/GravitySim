@@ -23,6 +23,15 @@ namespace presets
 		std::vector<std::unique_ptr<Object>>& objects,
 		Camera& camera, AtomScene& atom);
 
+	// True when the page is being viewed on a touch device. Fixed at startup.
+	bool MobileMode();
+
+	// The whole of mobile behaviour: no spawning, no sliders, no camera keys.
+	// The scene advances one step per tap and the camera turns on its own.
+	void UpdateMobile(GLFWwindow* window, float delta, bool& quantum,
+		std::vector<std::unique_ptr<Object>>& objects,
+		Camera& camera, AtomScene& atom);
+
 	// Name of whatever is loaded, empty once the user has touched the scene.
 	const char* CurrentName();
 

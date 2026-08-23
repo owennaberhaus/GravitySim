@@ -101,6 +101,7 @@
   @media (max-width: 600px), (max-height: 480px) {
     #controls { display: none; }
   }
+
 </style>
 </head>
 <body>
@@ -153,14 +154,32 @@
     var ok = false;
     try { ok = !!probe.getContext('webgl2'); } catch (e) { ok = false; }
 
+    // pointer:coarse asks whether the PRIMARY pointing device is imprecise - a
+    // finger or a stylus. A touchscreen laptop with a trackpad answers false,
+    // which is what we want; a width breakpoint would wrongly call a narrow
+    // desktop window a phone. ?mobile=1 forces it on for testing.
+    var forced = /[?&]mobile=1/.test(location.search);
+    var isTouch = forced || window.matchMedia('(pointer: coarse)').matches;
+
     // Module has to be defined either way: the glue script is emitted after this
     // one and runs unconditionally, so leaving it undefined would just swap a
     // clear message for a stack trace.
     window.Module = {
       canvas: canvas,
+      gsMobile: isTouch ? 1 : 0,
+      gsTaps: 0,
       print: function (t) { console.log(t); },
       printErr: function (t) { console.error(t); }
     };
+
+    // Taps are counted here and drained by the wasm each frame. pointerdown
+    // covers touch, pen and mouse identically, and does not depend on how a
+    // given emscripten version folds touches into mouse buttons.
+    if (isTouch) {
+      canvas.addEventListener('pointerdown', function () {
+        window.Module.gsTaps++;
+      }, { passive: true });
+    }
 
     if (!ok) {
       document.getElementById('loading').hidden = true;
@@ -178,6 +197,7 @@
     }, { passive: false });
 
     var controls = document.getElementById('controls');
+    if (isTouch) controls.hidden = true;   // the wasm HUD prints the tap hint
     var dismissed = false;
     function dismiss() {
       if (dismissed) return;

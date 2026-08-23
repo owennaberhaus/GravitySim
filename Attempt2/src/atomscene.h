@@ -22,6 +22,10 @@ public:
 
 	void Update(GLFWwindow* window, Camera& camera);
 	void SetElement(int z);
+
+	// Rebuild if something marked the atom dirty, without touching the mouse or
+	// keyboard. Update() does both; on mobile the input half has to stay off.
+	void Refresh(Camera& camera);
 	void UpdateHover(GLFWwindow* window, double mouseX, double mouseY, Camera& camera);
 	void Render(Camera& camera);
 	void PrintControls();

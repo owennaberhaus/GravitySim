@@ -164,6 +164,12 @@ void AtomScene::SetElement(int z)
 	m_dirty = true;
 }
 
+void AtomScene::Refresh(Camera& camera)
+{
+	if (m_dirty)
+		Rebuild(camera);
+}
+
 void AtomScene::Rebuild(Camera& camera)
 {
 	m_config = orbital::FillAufbau(m_element);
