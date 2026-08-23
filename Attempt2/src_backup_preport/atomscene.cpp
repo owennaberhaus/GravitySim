@@ -154,16 +154,6 @@ void AtomScene::Update(GLFWwindow* window, Camera& camera)
 		Rebuild(camera);
 }
 
-// Jump straight to an element. Same effect as the clear-then-click path, and
-// it releases the one-shot auto-framing so the new cloud gets refitted.
-void AtomScene::SetElement(int z)
-{
-	m_element = std::max(1, std::min(z, 118));
-	m_view = kValence;
-	m_framedOnce = false;
-	m_dirty = true;
-}
-
 void AtomScene::Rebuild(Camera& camera)
 {
 	m_config = orbital::FillAufbau(m_element);

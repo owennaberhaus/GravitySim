@@ -6,7 +6,7 @@
 namespace
 {
 	const char* kVertex =
-		GLSL_HEADER
+		"#version 330 core\n"
 		"layout(location = 0) in vec2 position;\n"
 		"layout(location = 1) in vec2 uv;\n"
 		"uniform mat4 u_projection;\n"
@@ -18,7 +18,7 @@ namespace
 		"}\n";
 
 	const char* kFragment =
-		GLSL_HEADER
+		"#version 330 core\n"
 		"in vec2 v_uv;\n"
 		"uniform sampler2D u_font;\n"
 		"uniform vec3 u_color;\n"

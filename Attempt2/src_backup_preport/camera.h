@@ -3,7 +3,7 @@
 #include "gtc/type_ptr.hpp"
 #include "gtc/matrix_transform.hpp"
 #include "gtc/quaternion.hpp"
-#include "platform_gl.h"
+#include "glew.h"
 #include "GLFW/glfw3.h"
 #include "timer.h"
 
@@ -33,10 +33,6 @@ public:
 
 	// Scrolling in reduces the radius. Clamped so it can no longer go negative and turn the view inside out.
 	void IncRadius(float amount) { m_radius = glm::clamp(m_radius - amount, kMinRadius, kMaxRadius); }
-
-	// Presets need to place the view outright rather than nudge it.
-	void SetRadius(float r) { m_radius = glm::clamp(r, kMinRadius, kMaxRadius); }
-	void SetOrientation(const glm::quat& q) { m_orientation = glm::normalize(q); }
 
 private:
 	void HandleInput(GLFWwindow* window);

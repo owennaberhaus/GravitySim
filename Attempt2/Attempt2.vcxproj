@@ -152,6 +152,7 @@
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\orbital.cpp" />
     <ClCompile Include="src\path.cpp" />
+    <ClCompile Include="src\presets.cpp" />
     <ClCompile Include="src\menu.h" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\text.cpp" />
@@ -166,6 +167,8 @@
     <ClInclude Include="src\orbital.h" />
     <ClInclude Include="src\path.h" />
     <ClInclude Include="src\picking.h" />
+    <ClInclude Include="src\platform_gl.h" />
+    <ClInclude Include="src\presets.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\text.h" />
     <ClInclude Include="src\timer.h" />

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="robots" content="noindex">
+<title>Gravity &amp; Quantum Simulator</title>
+<style>
+  :root {
+    --ink: #d8dee9;
+    --dim: #7c8ba1;
+    --accent: #9eb8e6;
+    --panel: rgba(20, 22, 28, 0.82);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #1a1a1a;
+    color: var(--ink);
+    font-family: var(--mono);
+  }
+
+  #canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    outline: none;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+    padding: 24px;
+  }
+  .overlay[hidden] { display: none; }
+
+  .card {
+    max-width: 30rem;
+    line-height: 1.6;
+    font-size: 0.875rem;
+  }
+  .card h1 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .card p { margin: 0 0 0.75rem; color: var(--dim); }
+  .card a { color: var(--accent); }
+
+  /* Controls, bottom centre. Fades out the moment the canvas is touched. */
+  #controls {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    /* Grid rather than flex: a shrink-to-fit fixed-position flex container
+       wraps at its preferred minimum width, which broke the columns apart
+       even with room to spare. */
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: 0.5rem 2rem;
+    padding: 0.85rem 1.25rem;
+    border-radius: 8px;
+    background: var(--panel);
+    backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+    line-height: 1.7;
+    white-space: nowrap;
+    color: var(--dim);
+    pointer-events: none;
+    transition: opacity 500ms ease;
+  }
+  #controls.hidden { opacity: 0; }
+  #controls[hidden] { display: none; }
+  #controls h2 {
+    margin: 0 0 0.15rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  #controls b { color: var(--ink); font-weight: 600; }
+
+  @media (max-width: 1040px) {
+    #controls { grid-template-columns: max-content; gap: 0.5rem; }
+  }
+  @media (max-width: 600px), (max-height: 480px) {
+    #controls { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas" tabindex="-1" oncontextmenu="return false;"></canvas>
+
+<div class="overlay" id="loading">
+  <div class="card"><p>Loading the simulator&hellip;</p></div>
+</div>
+
+<div class="overlay" id="unsupported" hidden>
+  <div class="card">
+    <h1>This browser can't run the simulator</h1>
+    <p>
+      It needs WebGL2, which this browser either doesn't support or has disabled.
+      Chrome, Edge, and Firefox have supported it since 2017; Safari since 15.1.
+    </p>
+    <p>
+      Some privacy extensions and older graphics drivers also switch it off. If you
+      have another browser handy, it will almost certainly work there.
+    </p>
+  </div>
+</div>
+
+<div id="controls">
+  <div>
+    <h2>Camera</h2>
+    <b>WASD</b> orbit &nbsp; <b>Q/E</b> roll &nbsp; <b>R</b> level<br>
+    <b>scroll</b> zoom &nbsp; <b>Tab</b> switch mode
+  </div>
+  <div>
+    <h2>Gravity</h2>
+    <b>right click</b> movable body &nbsp; <b>left</b> fixed<br>
+    <b>arrows</b> pick slider &nbsp; <b>hover + space</b> delete
+  </div>
+  <div>
+    <h2>Atom</h2>
+    <b>left click</b> next element &nbsp; <b>right</b> previous<br>
+    <b>[</b> and <b>]</b> resize the orbital surface
+  </div>
+</div>
+
+<script>
+  (function () {
+    var canvas = document.getElementById('canvas');
+
+    // Probe before loading the module, so an unsupported browser gets a sentence
+    // instead of a blank canvas and a console error nobody will open.
+    var probe = document.createElement('canvas');
+    var ok = false;
+    try { ok = !!probe.getContext('webgl2'); } catch (e) { ok = false; }
+
+    // Module has to be defined either way: the glue script is emitted after this
+    // one and runs unconditionally, so leaving it undefined would just swap a
+    // clear message for a stack trace.
+    window.Module = {
+      canvas: canvas,
+      print: function (t) { console.log(t); },
+      printErr: function (t) { console.error(t); }
+    };
+
+    if (!ok) {
+      document.getElementById('loading').hidden = true;
+      document.getElementById('unsupported').hidden = false;
+      document.getElementById('controls').hidden = true;
+      canvas.style.display = 'none';
+      return;
+    }
+
+    // SPACE deletes an object and the arrow keys switch sliders. Without this the
+    // page scrolls and Tab walks focus off the canvas instead.
+    var swallow = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'];
+    window.addEventListener('keydown', function (e) {
+      if (swallow.indexOf(e.code) !== -1) e.preventDefault();
+    }, { passive: false });
+
+    var controls = document.getElementById('controls');
+    var dismissed = false;
+    function dismiss() {
+      if (dismissed) return;
+      dismissed = true;
+      controls.classList.add('hidden');
+    }
+    canvas.addEventListener('mousedown', function () { canvas.focus(); dismiss(); });
+    window.addEventListener('keydown', dismiss);
+    window.addEventListener('wheel', dismiss, { passive: true });
+
+    window.Module.onRuntimeInitialized = function () {
+      document.getElementById('loading').hidden = true;
+      setTimeout(dismiss, 12000);
+    };
+  })();
+</script>
+
+{{{ SCRIPT }}}
+
+</body>
+</html>

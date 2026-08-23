@@ -5,7 +5,7 @@
 
 // actual shaders 
 std::string vertexShader =
-GLSL_HEADER
+"#version 330 core\n"
 "\n"
 "layout(location = 0) in vec3 position;\n"
 "layout(location = 1) in vec3 normal;\n"
@@ -25,7 +25,7 @@ GLSL_HEADER
 "}\n";
 
 std::string vertexShader2D =
-GLSL_HEADER
+"#version 330 core\n"
 "\n"
 "layout(location = 0) in vec3 position;"
 "\n"
@@ -39,7 +39,7 @@ GLSL_HEADER
 
 // Flat fill - used by the 2D menu shader.
 std::string fragmentShader =
-GLSL_HEADER
+"#version 330 core\n"
 "\n"
 "layout(location = 0) out vec4 color;\n"
 "uniform vec3 u_color;\n"
@@ -51,7 +51,7 @@ GLSL_HEADER
 
 // Lit fill Without a shading term a solid color sphere was indistinguishable from a flat disc this is the source of light for the 3d objects HUGE UPDATE
 std::string fragmentShader3D =
-GLSL_HEADER
+"#version 330 core\n"
 "\n"
 "layout(location = 0) out vec4 color;\n"
 "in vec3 v_normal;\n"
