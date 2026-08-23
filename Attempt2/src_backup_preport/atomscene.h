@@ -1,5 +1,5 @@
 #pragma once
-#include "platform_gl.h"
+#include <glew.h>
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <string>
@@ -21,7 +21,6 @@ public:
 	AtomScene& operator=(const AtomScene&) = delete;
 
 	void Update(GLFWwindow* window, Camera& camera);
-	void SetElement(int z);
 	void UpdateHover(GLFWwindow* window, double mouseX, double mouseY, Camera& camera);
 	void Render(Camera& camera);
 	void PrintControls();

@@ -2,7 +2,7 @@
 extern float M_G; // gravitational constant that is changed with + / -
 #define M_PI 3.1415926535897932384626433
 
-#include "platform_gl.h"
+#include <glew.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
 #include <matrix_transform.hpp>
@@ -51,7 +51,6 @@ public:
     const float GetVelY() { return m_velY; }
 	const float GetVelZ() { return m_velZ; }
     const bool GetMovable() { return m_movable; }
-    const bool GetExertsGravity() { return m_exertsGravity; }
     const glm::vec3 GetColor() { return m_color; }
     void SetPosX(float val) { m_posX = val; }
     void SetPosY(float val) { m_posY = val; }

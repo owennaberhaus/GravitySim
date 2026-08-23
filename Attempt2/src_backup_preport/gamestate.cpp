@@ -1,5 +1,4 @@
 #include "gamestate.h"
-#include "presets.h"
 
 GameState::GameState(GLFWwindow* window) :
     m_shader(),
@@ -112,12 +111,6 @@ void GameState::update()
         m_deltaTime = 0.0f;
     m_gameTimer.reset(); // then immidiately reset for next frame
 
-    // A stall - alt-tab, a breakpoint, or the first frame after the wasm module
-    // finishes loading - hands back a delta worth many frames. Integrating that
-    // in one step throws everything off screen, so cap it.
-    if (m_deltaTime > kMaxFrameStep)
-        m_deltaTime = kMaxFrameStep;
-
     // Framebuffer size drives the viewport and the projection aspect ratio.
     glfwGetFramebufferSize(m_window, &m_width, &m_height); // snag new window dimensions
     glViewport(0, 0, m_width, m_height); // then update opengl viewport to avoid stretching
@@ -129,10 +122,6 @@ void GameState::update()
     if (tabPressed && !m_tabWasPressed)
         m_mode = (m_mode == Mode::Classical) ? Mode::Quantum : Mode::Classical;
     m_tabWasPressed = tabPressed;
-
-    // The number row loads canned scenes. Handled before either mode runs so a
-    // quantum preset marks the atom dirty in time for this frame's rebuild.
-    presets::Update(m_window, m_deltaTime, m_mode == Mode::Quantum, m_objects, m_camera, m_atom);
 
     if (m_mode == Mode::Quantum)
     {
@@ -157,13 +146,8 @@ void GameState::update()
         m_worldY = m_worldTop - static_cast<float>(m_ypos / winH) * (m_worldTop - m_worldBottom);
     }
 
-    // Spawning or deleting means the scene is no longer the preset that was
-    // loaded, so the label stops claiming otherwise.
-    const size_t countBefore = m_objects.size();
     m_clicker.UpdateHoverAndDelete(m_objects, m_window, m_xpos, m_ypos, m_camera);
     m_clicker.MouseControl(m_window, m_worldX / m_camera.GetRadius(), m_worldY / m_camera.GetRadius(), m_objects, m_menu, g_scrollDelta, m_camera);
-    if (m_objects.size() != countBefore)
-        presets::Invalidate();
     m_menu.ToggleGravityAndInitVel(m_window);
 
     IncrementGravity(m_window, m_deltaTime);
@@ -210,11 +194,6 @@ void GameState::DrawHud()
             m_text.DrawAnchored(lines[i], TextRenderer::Anchor::TopRight,
                 static_cast<int>(i) + 1, scale, value);
 
-        const std::string preset = presets::CurrentName();
-        if (!preset.empty())
-            m_text.DrawAnchored(preset, TextRenderer::Anchor::TopRight,
-                static_cast<int>(lines.size()) + 1, scale, glm::vec3(1.0f, 0.85f, 0.45f));
-
         const std::string& selected = m_atom.SelectedLabel();
         if (!selected.empty())
             m_text.DrawAnchored("selected: " + selected, TextRenderer::Anchor::TopLeft,
@@ -228,20 +207,14 @@ void GameState::DrawHud()
         DrawSliderLabels(label);
         m_text.DrawAnchored("GRAVITY", TextRenderer::Anchor::TopRight, 0, scale, label);
         m_text.DrawAnchored(buffer, TextRenderer::Anchor::TopRight, 1, scale, value);
-
-        int line = 2;
-        const std::string preset = presets::CurrentName();
-        if (!preset.empty())
-            m_text.DrawAnchored(preset, TextRenderer::Anchor::TopRight, line++, scale, glm::vec3(1.0f, 0.85f, 0.45f));
         if (m_paused)
-            m_text.DrawAnchored("PAUSED", TextRenderer::Anchor::TopRight, line, scale, glm::vec3(1.0f, 0.7f, 0.3f));
+            m_text.DrawAnchored("PAUSED", TextRenderer::Anchor::TopRight, 2, scale, glm::vec3(1.0f, 0.7f, 0.3f));
     }
 
     char fps[32];
     snprintf(fps, sizeof(fps), "%.0f fps", m_fps);
     m_text.DrawAnchored(fps, TextRenderer::Anchor::BottomRight, 0, 1.5f, label);
     m_text.DrawAnchored("tab switches mode", TextRenderer::Anchor::BottomLeft, 0, 1.5f, label);
-    m_text.DrawAnchored("1-9 presets, 0 clears", TextRenderer::Anchor::BottomLeft, 1, 1.5f, label);
 
     m_text.End();
 }

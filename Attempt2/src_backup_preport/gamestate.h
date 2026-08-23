@@ -1,5 +1,5 @@
 #pragma once
-#include "platform_gl.h"
+#include <glew.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
 #include <matrix_transform.hpp>
@@ -53,7 +53,6 @@ private:
 	Mode m_mode{ Mode::Classical };
 	bool m_tabWasPressed{ false };
 	float m_fps{ 60.0f };
-	static constexpr float kMaxFrameStep{ 0.05f };
 	// vector that all objects are dynamically allocated to
 	std::vector<std::unique_ptr<Object>> m_objects{};
 
