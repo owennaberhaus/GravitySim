@@ -214,7 +214,7 @@ void SolveProjection(float& worldLeft, float& worldRight, float& worldBottom, fl
 	float aspect = width / height;
 
 	// scared to update this since adding 3D, things may hinge on finding a correct half height?
-	// I think the menu, thats the next thing to fix.
+	// I think the menu, thats the next thing to fix. things are getting pretty cooked no lie
 	if (aspect >= 1.0f)
 	{
 		worldLeft = -aspect; worldRight = aspect; worldBottom = -1.0f; worldTop = 1.0f;

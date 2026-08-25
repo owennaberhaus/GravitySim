@@ -22,9 +22,9 @@ public:
 
 	void Update(GLFWwindow* window, Camera& camera);
 	void SetElement(int z);
+	int Element() const { return m_element; }
 
-	// Rebuild if something marked the atom dirty, without touching the mouse or
-	// keyboard. Update() does both; on mobile the input half has to stay off.
+	// Rebuild if something marked the atom dirty, without touching the mouse or keyboard       Update() does both
 	void Refresh(Camera& camera);
 	void UpdateHover(GLFWwindow* window, double mouseX, double mouseY, Camera& camera);
 	void Render(Camera& camera);
@@ -72,7 +72,7 @@ private:
 	// Nucleus size is a fraction of the cloud's own size, not an absolute length
 	float m_nucleusFraction{ 0.03f };
 
-	// Fraction of the probability each surface encloses. The textbook value is 0.90, but that surface is way too big to be a good visualizer as far as im concerend you can still adjust with [ ]
+	// Fraction of the probability each surface encloses. The textbook value is 0.90, but that surface is way too big to be a good visualizer as far as im concerend you can still adjust with [ or ]
 	float m_isoFraction{ 0.30f };
 
 	float m_cloudExtent{ 1.0f };

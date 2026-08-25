@@ -49,11 +49,7 @@ void Camera::UpdateProjectionMatrix(int width, int height)
 
 	float aspect = static_cast<float>(width) / static_cast<float>(height);
 
-	// glm::perspective fixes the VERTICAL field of view, so a portrait phone keeps
-	// the same height and loses horizontal room - a scene framed on a desktop gets
-	// its sides cut off. Below square, widen the vertical angle by exactly the
-	// shortfall, which holds the horizontal angle at 45 degrees instead. Capped so
-	// an extreme aspect does not turn into a fisheye.
+	// glm::perspective fixes the VERTICAL field of view, so a portrait phone keeps the same height and loses horizontal room
 	float vertical = 45.0f;
 	if (aspect < 1.0f && aspect > 0.0f)
 	{

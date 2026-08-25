@@ -50,8 +50,9 @@ void GameState::PrintTutorial()
         "WASD to orbit camera, Q/E to roll, 'R' to level out, scroll wheel to zoom\n" <<
         "hover an object (it brightens) and press SPACE to delete it\n" <<
         "+ and - to increase and reduce the gravitational constant\n" <<
-        "objects will spawn on the plane normal to the camera direciton, that crosses (0, 0, 0)" <<
+        "objects will spawn on the plane normal to the camera direction, that crosses (0, 0, 0)\n" <<
         "esc key to pause the whole simulation\n" <<
+        "keys 1 to 9 load preset scenes, 0 clears back to an empty sandbox\n" <<
         "tab to switch between the gravity sim and quantum mode\n" << 
         "When in quantum mode, use '[' and ']' to adjust the statistical area of electron presence rendered\n";
 
@@ -71,8 +72,7 @@ void GameState::render()
         return;
     }
 
-    // The slider orbs are a control surface. With input off they are decoration
-    // that covers part of the scene, so mobile skips them entirely.
+    // The slider orbs are a control surface. With input off they are decoration that covers part of the scene
     if (!presets::MobileMode())
     {
         glUseProgram(m_shader.GetShader2D());
@@ -89,8 +89,7 @@ void GameState::render()
         obj->UpdatePath(m_window, m_deltaTime);
         obj->DrawPath(m_shader.GetModelLoc(), m_shader.GetColorLoc());
     }
-    // The object under the cursor draws brighter, so it's obvious what SPACE
-    // is about to delete.
+    // The object under the cursor draws brighter, so it's obvious what SPACE   is about to delete.
     const int hovered = m_clicker.GetHoveredIndex();
     for (size_t i = 0; i < m_objects.size(); ++i)
     {
@@ -117,9 +116,7 @@ void GameState::update()
         m_deltaTime = 0.0f;
     m_gameTimer.reset(); // then immidiately reset for next frame
 
-    // A stall - alt-tab, a breakpoint, or the first frame after the wasm module
-    // finishes loading - hands back a delta worth many frames. Integrating that
-    // in one step throws everything off screen, so cap it.
+
     if (m_deltaTime > kMaxFrameStep)
         m_deltaTime = kMaxFrameStep;
 
@@ -135,32 +132,33 @@ void GameState::update()
         m_mode = (m_mode == Mode::Classical) ? Mode::Quantum : Mode::Classical;
     m_tabWasPressed = tabPressed;
 
-    // On a touch device the sim runs itself: no spawning, no sliders, no camera
-    // keys. One tap advances the scene, and that is the whole interface.
     if (presets::MobileMode())
     {
         bool quantum = (m_mode == Mode::Quantum);
         presets::UpdateMobile(m_window, m_deltaTime, quantum, m_objects, m_camera, m_atom);
         m_mode = quantum ? Mode::Quantum : Mode::Classical;
 
-        // The camera already built its view matrix above, before the spin moved
-        // it. Rebuild so the frame that renders is the frame that was aimed.
+        // The camera already built its view matrix above, before the spin moved it
         m_camera.Update(m_window, m_width, m_height);
 
-        // Refresh rather than Update: the atom still has to rebuild when the
-        // element changes, but it must not read the mouse.
+        // Refresh rather than Update: the atom still has to rebuild when the element changes, but it must not read the mouse.
         if (m_mode == Mode::Quantum)
             m_atom.Refresh(m_camera);
         return;
     }
 
-    // The number row loads canned scenes. Handled before either mode runs so a
-    // quantum preset marks the atom dirty in time for this frame's rebuild.
+    // The number row loads canned scenes.
     presets::Update(m_window, m_deltaTime, m_mode == Mode::Quantum, m_objects, m_camera, m_atom);
 
     if (m_mode == Mode::Quantum)
     {
+        // Clicking to another element means the preset label no longer describes
+        // what is on screen, same as spawning does on the gravity side.
+        const int zBefore = m_atom.Element();
         m_atom.Update(m_window, m_camera);
+        if (m_atom.Element() != zBefore)
+            presets::Invalidate();
+
         glfwGetCursorPos(m_window, &m_xpos, &m_ypos);
         m_atom.UpdateHover(m_window, m_xpos, m_ypos, m_camera);
         return;
@@ -171,8 +169,7 @@ void GameState::update()
 
     glfwGetCursorPos(m_window, &m_xpos, &m_ypos); // grab current mouse position
 
-    // Cursor coordinates are in WINDOW space, which is not the same as the
-    // framebuffer size on a scaled display - normalise against the right one.
+    // Cursor coordinates are in WINDOW space 
     int winW{ 0 }, winH{ 0 };
     glfwGetWindowSize(m_window, &winW, &winH);
     if (winW > 0 && winH > 0)
@@ -181,8 +178,7 @@ void GameState::update()
         m_worldY = m_worldTop - static_cast<float>(m_ypos / winH) * (m_worldTop - m_worldBottom);
     }
 
-    // Spawning or deleting means the scene is no longer the preset that was
-    // loaded, so the label stops claiming otherwise.
+    // Spawning or deleting means the scene is no longer the preset that was loaded right
     const size_t countBefore = m_objects.size();
     m_clicker.UpdateHoverAndDelete(m_objects, m_window, m_xpos, m_ypos, m_camera);
     m_clicker.MouseControl(m_window, m_worldX / m_camera.GetRadius(), m_worldY / m_camera.GetRadius(), m_objects, m_menu, g_scrollDelta, m_camera);
