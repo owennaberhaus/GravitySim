@@ -11,23 +11,22 @@ Visual Studio project  ->  Emscripten  ->  WebAssembly + WebGL2
 ```
 
 The gravity side is an N-body sandbox: spawn bodies, give them initial
-velocities, and watch them orbit, collide, and slingshot. The quantum side
-solves screened-hydrogenic wavefunctions and draws |psi|^2 isosurfaces with
-marching tetrahedra, so the shapes on screen are the real orbitals for whichever
-element is loaded, filled in aufbau order with the Pauli exclusion principle and
-Hund's rule.
+velocities in the X Y and Z directions with the 3 objects at the top,
+then watch them orbit, collide, and slingshot. The quantum side
+solves screened-hydrogenic wavefunctions and draws |psi|^2 isosurfaces, 
+so the shapes on screen are the real orbitals for whichever element is loaded, 
+filled in aufbau order and accurately following the Pauli exclusion principle and Hund's rule.
 
 ## Try it in your browser
 
 Check out my most recent port to the web
 [here](https://owennaberhaus.com/gravitysim)!
 
-No install, no download. On a phone it runs itself: tap anywhere to step through
-the scenes.
+No install, no download. It even will run on mobile (though it is a massively minimized experience... My fault that UI is difficult)
 
 ## Instructions for use
 
-Everything below is printed to the console when the desktop build starts.
+Everything below is printed to the console when the desktop build starts, it's just a collection of information on inputs the sim registers.
 
 ```
 right click to spawn in a movable object, left click for immovable
@@ -59,8 +58,7 @@ tab returns to the gravity sim
 
 ### Preset scenes
 
-Keys 1 through 9 load a canned scene for whichever mode is showing, and 0 clears
-back to an empty sandbox.
+Keys 1 through 9 load preset scenes in both modes, and 0 brings you back to default (sandbox, i guess)
 
 | key | gravity | quantum |
 | --- | --- | --- |
@@ -92,25 +90,18 @@ are flat rather than in a folder.
 
 ## Have at it
 
-Go ahead and play around with this. If you're so inclined, download the repo and
-just start messing with things! I'd love to see anything you come up with —
-please hit my line at [owennaberhaus.com](https://owennaberhaus.com).
+Go ahead and play around with this. I'd love to have anyone download the repo and
+just start messing with things! It would be great to see anything you come up with or introduce, 
+please hit my line at [owennaberhaus.com](https://owennaberhaus.com) even if you just want to chat about it.
 
 ## A few looks at it
 
 ![The solar system preset](images/solarsystem.png)
 
-*A fixed star with five planets, two of them on inclined orbits. The trails make
-the periods legible — the innermost planet laps the outermost several times over.*
 
 ![The accretion ring preset](images/accretionring.png)
 
-*Twelve test particles on circular orbits at different radii. Orbital speed goes
-as 1/sqrt(r), so the ring shears itself into a spiral — Kepler's third law drawn
-rather than stated.*
 
 ![Zirconium's 4d subshell](images/Zr.png)
 
-*Quantum mode showing the 4d subshell of zirconium. The surface encloses 30% of
-the probability density, found by marching tetrahedra over a sampled grid of
-|psi|^2. Press `[` and `]` to make it thinner or fatter.*
+
