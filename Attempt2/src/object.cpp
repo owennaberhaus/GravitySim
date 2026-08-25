@@ -214,10 +214,7 @@ void ApplyGravity(Object& one, Object& two, float delta, Menu& menu)
 
         float fMag = M_G * one.GetMass() * two.GetMass() / (dist2 + kSoftening * kSoftening);
 
-        // m_exertsGravity was stored but never read. Honouring it lets a preset
-        // draw a planet big enough to see without that planet then dominating
-        // its neighbours - mass is also radius here, so the two cannot be tuned
-        // separately. Defaults to true, so nothing the user spawns changes.
+        // this is kind of a cop out i wont hold you but it makes things look reaaaaaal nice in those presets
         if (one.GetMovable() && two.GetExertsGravity())
             one.IncVel(normal * (fMag / one.GetMass()), delta);
         if (two.GetMovable() && one.GetExertsGravity())

@@ -1,4 +1,5 @@
 #include "camera.h"
+#include <cmath>
 #include <iostream>
 
 // controls the camera's orientation based on user input
@@ -48,8 +49,16 @@ void Camera::UpdateProjectionMatrix(int width, int height)
 
 	float aspect = static_cast<float>(width) / static_cast<float>(height);
 
+	// glm::perspective fixes the VERTICAL field of view, so a portrait phone keeps the same height and loses horizontal room
+	float vertical = 45.0f;
+	if (aspect < 1.0f && aspect > 0.0f)
+	{
+		float widened = glm::degrees(2.0f * std::atan(std::tan(glm::radians(22.5f)) / aspect));
+		vertical = glm::min(widened, 90.0f);
+	}
+
 	m_projection = glm::perspective(
-		glm::radians(45.0f),  // FOV
+		glm::radians(vertical),
 		aspect,
 		0.1f, // near plane
 		1000.0f // far plane

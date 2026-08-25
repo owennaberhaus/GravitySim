@@ -126,3 +126,5 @@ static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     g_scrollDelta += static_cast<float>(yoffset);
 }
+
+// rip this class structure :(

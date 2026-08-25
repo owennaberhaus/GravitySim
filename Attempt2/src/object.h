@@ -1,5 +1,5 @@
 #pragma once
-extern float M_G; // gravitational constant that is changed with + / -
+extern float M_G; // gravitational constant that is changed with + / - in sim
 #define M_PI 3.1415926535897932384626433
 
 #include "platform_gl.h"

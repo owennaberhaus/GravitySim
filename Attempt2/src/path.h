@@ -25,10 +25,7 @@ private:
     float m_width{ 0.005f };
     glm::mat4 m_model{ 1.0f };
     glm::vec3 m_color;
-    // Fifty seconds of trail at 60 fps, which outlasts the longest preset
-    // orbit. UpdateVertices re-uploads the entire buffer every frame, so this
-    // is a per-frame cost per object, not a one-off allocation - at the old
-    // 50000 a long session pushed megabytes of traffic per frame.
-    size_t m_maxLength{ 3000 };
+    // Fifty seconds of trail at 60 fps - i changed this idk what it is anymore icl
+    size_t m_maxLength{ 6000 };
 
 };

@@ -5,25 +5,16 @@
 
 namespace
 {
-	// Must match kSoftening in object.cpp. The sim integrates
-	// a = M_G * m / (r^2 + soft^2), so a circular orbit is very slightly slower
-	// than the textbook sqrt(mu/r) - a tenth of a percent out at r = 1, but 2.8%
-	// out at r = 0.3, which is enough to turn the moon's circle into an ellipse.
+	// Must match kSoftening in object.cpp 
 	const float kSoft = 0.05f;
-
-	// Speed for a circular orbit of radius r about a body of standard parameter
-	// mu = M_G * mass, under the softened force above rather than the ideal one.
+ 
 	float CircularSpeed(float mu, float r)
 	{
 		return std::sqrt(mu * r / (r * r + kSoft * kSoft));
 	}
 
-	// Mass doubles as radius: Object scales the unit sphere by m_mass, and two
-	// bodies collide at m1 + m2. So the drawn size and the physics are the same
-	// number, and the only way to get a heavy body that is not enormous is to
-	// scale every mass down and M_G up by the same factor - accelerations go as
-	// M_G * m, so the trajectories come out identical.
-	const float kG = 3.3333333f;   // with a 0.3 star this makes mu exactly 1
+	// Mass doubles as radius 
+	const float kG = 3.3333333f; // with a 0.3 star this makes mu exactly 1
 	const float kStarMass = 0.3f;
 
 	const char* s_name = "";
@@ -32,6 +23,16 @@ namespace
 	float s_resetAfter = 0.0f;
 	bool s_down[10] = { false };
 
+	// Mobile turntable
+	float s_elevation = 0.0f;
+	float s_yaw = 0.0f;
+
+	int s_step = -1; // -1 means nothing shown yet
+	float s_tapLock = 0.0f;
+	const float kTapCooldown = 1.0f; // a fast double tap must not skip a scene
+	const float kSpinDegrees = 9.0f; // a full turn every forty seconds
+	const int kSteps = 18; // nine gravity scenes interleaved with nine atoms
+
 	void Add(std::vector<std::unique_ptr<Object>>& v, glm::vec3 p, glm::vec3 vel,
 		float mass, bool movable = true, bool gravitates = true)
 	{
@@ -39,10 +40,11 @@ namespace
 			mass, movable, glm::vec3(0.5f, 0.5f, 1.0f), gravitates));
 	}
 
-	// Park the camera at a distance, looking down on the orbital plane by
-	// elevation degrees. Zero elevation is face on, which suits planar figures.
+	// Park the camera at a distance
 	void View(Camera& camera, float distance, float elevation)
 	{
+		s_elevation = elevation;
+		s_yaw = 0.0f;
 		camera.SetRadius(distance);
 		camera.SetOrientation(glm::angleAxis(glm::radians(-elevation), glm::vec3(1.0f, 0.0f, 0.0f)));
 	}
@@ -62,11 +64,7 @@ namespace
 
 	typedef std::vector<std::unique_ptr<Object>> Bodies;
 
-	// 1 - the Chenciner-Montgomery figure eight. Three equal masses chasing each
-	// other around one closed curve. The published initial conditions assume
-	// G = 1 and m = 1; at those values the drawn radius would be 1 and the three
-	// bodies would overlap permanently, so mass is scaled by 0.05 and M_G by its
-	// reciprocal, which leaves the trajectory untouched.
+	// 1 - the Chenciner-Montgomery figure eight
 	void FigureEight(Bodies& v, Camera& camera)
 	{
 		M_G = 20.0f;
@@ -78,18 +76,11 @@ namespace
 
 		View(camera, 3.2f, 0.0f);
 
-		// The eight is an unstable periodic orbit, so integration error compounds
-		// instead of averaging out. Measured distance from the starting
-		// configuration after n periods of 6.326 s: 0.018 at one, 0.108 at four,
-		// 0.248 at eight, 0.432 at twelve. On a figure two units across, a fifth
-		// of a unit is where it stops looking closed, so restart at seven.
+		// The eight is an unstable periodic orbit
 		s_resetAfter = 45.0f;
 	}
 
-	// 2 - a star and five planets on circular orbits, two of them inclined so the
-	// scene reads as three dimensional. The planets do not exert gravity: at this
-	// scale a planet big enough to see would be big enough to wreck its
-	// neighbours' orbits within a minute.
+	// 2 - a star and five planets on circular orbits
 	void SolarSystem(Bodies& v, Camera& camera)
 	{
 		M_G = kG;
@@ -105,8 +96,7 @@ namespace
 		View(camera, 9.5f, 28.0f);
 	}
 
-	// 3 - two stars orbiting their common centre with a planet far enough out
-	// that it sees them as a single mass.
+	// 3 - two stars orbiting their common centre with a planet far enough out that it sees them as a single mass.
 	void Binary(Bodies& v, Camera& camera)
 	{
 		M_G = kG;
@@ -114,8 +104,7 @@ namespace
 		const float sep = 1.0f;
 		const float mu = M_G * m;
 
-		// Equal masses a distance d apart circle the barycentre at d/2, and
-		// balancing mu*m/d^2 against the centripetal term gives v^2 = mu/(2d).
+		// Equal masses a distance d apart circle the barycentre at d/2
 		float v0 = std::sqrt(mu * (sep * 0.5f) / (sep * sep + kSoft * kSoft));
 
 		Add(v, glm::vec3(-sep * 0.5f, 0.0f, 0.0f), glm::vec3(0.0f, -v0, 0.0f), m);
@@ -139,8 +128,7 @@ namespace
 
 		Add(v, glm::vec3(earthR, 0.0f, 0.0f), glm::vec3(0.0f, earthV, 0.0f), earthMass);
 
-		// Well inside the Hill radius, which is earthR * cbrt(earthMass / 3*star)
-		// = 0.89 here, so the sun cannot pull the moon away.
+		// Well inside the Hill radius, which is earthR * cbrt(earthMass / 3*star) = 0.89 here
 		const float moonR = 0.3f;
 		float moonV = CircularSpeed(M_G * earthMass, moonR);
 		Add(v, glm::vec3(earthR + moonR, 0.0f, 0.0f), glm::vec3(0.0f, earthV + moonV, 0.0f), 0.025f, true, false);
@@ -148,8 +136,7 @@ namespace
 		View(camera, 6.5f, 24.0f);
 	}
 
-	// 5 - eccentric orbits. Speed visibly piles up near the star and bleeds off
-	// at the far end, which is Kepler's second law made obvious.
+	// 5 - eccentric orbits
 	void Comets(Bodies& v, Camera& camera)
 	{
 		M_G = kG;
@@ -163,7 +150,6 @@ namespace
 
 		for (int i = 0; i < 3; ++i)
 		{
-			// Launched from apoapsis, where velocity is purely tangential.
 			float rA = a[i] * (1.0f + e[i]);
 			float speed = std::sqrt(mu * (2.0f / rA - 1.0f / a[i]));
 
@@ -177,14 +163,7 @@ namespace
 		View(camera, 13.0f, 22.0f);
 	}
 
-	// 6 - an S-type planet: it orbits one star of a binary rather than both, the
-	// mirror image of preset 3. Stable because 0.6 is well inside the critical
-	// semi-major axis for an equal-mass binary, roughly 0.27 times the separation.
-	//
-	// This slot used to hold Lagrange's equilateral three-body solution. That is an
-	// exact solution, but for equal masses it is linearly unstable - Gascheau's
-	// criterion wants (sum m)^2 / (sum of pairwise products) above 27 and equal
-	// masses give exactly 3 - so it tore itself apart inside three minutes.
+	// 6 - an S-type planet
 	void BinaryPlanet(Bodies& v, Camera& camera)
 	{
 		M_G = kG;
@@ -205,8 +184,7 @@ namespace
 		View(camera, 10.0f, 24.0f);
 	}
 
-	// 7 - two tight pairs orbiting each other. Stable because the separation
-	// ratio is eight to one, so each pair sees the other as a single mass.
+	// 7 - two tight pairs orbiting each other.
 	void DoubleBinary(Bodies& v, Camera& camera)
 	{
 		M_G = kG;
@@ -229,25 +207,19 @@ namespace
 		View(camera, 11.0f, 25.0f);
 	}
 
-	// 8 - twelve bodies on a shell, given just enough spin to swirl rather than
-	// fall straight through each other. Genuinely chaotic; no two runs of the
-	// user's clicking will look the same, but the start is identical every time.
+	// 8 - twelve bodies on a shell
 	void Collapse(Bodies& v, Camera& camera)
 	{
 		M_G = kG;
 		const int count = 10;
 		const float R = 2.2f;
 
-		// Circular speed at the shell edge is sqrt(mu_total / R) = 1.10 here. The
-		// first version used 0.28, a quarter of that, so the cloud fell straight
-		// through itself and slingshotted nine of twelve bodies past r = 199.
-		// Two thirds of circular collapses once and then swirls.
+		// Circular speed at the shell edge is sqrt(mu_total / R) = 1.10 here
 		const float spin = 0.75f;
 
 		for (int i = 0; i < count; ++i)
 		{
-			// Fibonacci sphere: even coverage without any random numbers, so the
-			// scene is byte for byte the same on every machine.
+			// Fibonacci sphere
 			float z = 1.0f - (2.0f * i + 1.0f) / count;
 			float rho = std::sqrt(std::max(0.0f, 1.0f - z * z));
 			float phi = i * 2.3999632f;   // golden angle in radians
@@ -265,14 +237,11 @@ namespace
 
 		View(camera, 8.5f, 18.0f);
 
-		// Chaotic by construction, so it is the one scene that genuinely wears
-		// out. Restarting keeps it watchable without the user pressing anything.
+		// same as earlier
 		s_resetAfter = 45.0f;
 	}
 
-	// 9 - a disc of test particles. Inner ones lap outer ones because v goes as
-	// 1/sqrt(r), so the ring shears itself into a spiral - Kepler's third law
-	// drawn rather than stated.
+	// 9 - a disc of test particles
 	void Ring(Bodies& v, Camera& camera)
 	{
 		M_G = kG;
@@ -302,9 +271,7 @@ namespace
 		"comets", "planet in a binary", "double binary", "cluster collapse", "accretion ring"
 	};
 
-	// Chosen so each one shows a different shape: a sphere, two lobes, three
-	// orthogonal dumbbells, a sphere again by Unsold's theorem, then the d and f
-	// shells.
+	// Chosen so each one shows a different shape
 	const int kAtomZ[10] = { 1, 1, 6, 7, 10, 26, 29, 36, 64, 92 };
 	const char* kAtomNames[10] = {
 		"hydrogen", "hydrogen", "carbon", "nitrogen", "neon",
@@ -326,6 +293,9 @@ void Load(int index, bool quantum, std::vector<std::unique_ptr<Object>>& objects
 	{
 		atom.SetElement(kAtomZ[index]);
 		s_name = kAtomNames[index];
+		// AtomScene refits the distance itself, so only the tilt is set here.
+		s_elevation = 18.0f;
+		s_yaw = 0.0f;
 		return;
 	}
 
@@ -375,6 +345,59 @@ bool Update(GLFWwindow* window, float delta, bool quantum,
 	}
 
 	return false;
+}
+
+bool MobileMode()
+{
+#ifdef __EMSCRIPTEN__
+	// Asked once and cached
+	static int cached = -1;
+	if (cached < 0)
+		cached = EM_ASM_INT({ return (Module.gsMobile | 0); }) ? 1 : 0;
+	return cached != 0;
+#else
+	return false;
+#endif
+}
+
+void UpdateMobile(GLFWwindow* window, float delta, bool& quantum,
+	std::vector<std::unique_ptr<Object>>& objects, Camera& camera, AtomScene& atom)
+{
+	(void)window;
+	s_age += delta;
+	if (s_tapLock > 0.0f)
+		s_tapLock -= delta;
+
+	// Taps are counted in JS and drained
+	int taps = 0;
+#ifdef __EMSCRIPTEN__
+	taps = EM_ASM_INT({
+		var n = Module.gsTaps | 0;
+		Module.gsTaps = 0;
+		return n;
+	});
+#endif
+
+	if (s_step < 0 || (taps > 0 && s_tapLock <= 0.0f))
+	{
+		s_step = (s_step + 1) % kSteps;
+
+		// Even steps are a gravity scene
+		quantum = (s_step % 2) != 0;
+		Load(s_step / 2 + 1, quantum, objects, camera, atom);
+		s_tapLock = kTapCooldown;
+	}
+	else if (!quantum && s_resetAfter > 0.0f && s_age >= s_resetAfter && s_current > 0)
+	{
+		// The figure eight and the cluster wear out
+		float keep = s_yaw;
+		Load(s_current, false, objects, camera, atom);
+		s_yaw = keep;
+	}
+
+	s_yaw += glm::radians(kSpinDegrees) * delta;
+	camera.SetOrientation(glm::angleAxis(s_yaw, glm::vec3(0.0f, 1.0f, 0.0f))
+		* glm::angleAxis(glm::radians(-s_elevation), glm::vec3(1.0f, 0.0f, 0.0f)));
 }
 
 const char* CurrentName()

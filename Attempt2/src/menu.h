@@ -36,8 +36,7 @@ public:
 
 	Object* GetSelectedSlider() { return selectedSlider; }
 
-	// What each slider orb means, so the HUD can caption them. Position and
-	// radius are in the menu's own ortho space, not pixels.
+	// What each slider orb means, so the HUD can caption them. Position and radius are in the menu's own ortho space, not pixels.
 	struct SliderLabel
 	{
 		const char* text;

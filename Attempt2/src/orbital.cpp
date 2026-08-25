@@ -33,7 +33,7 @@ namespace
 		return cur;
 	}
 
-	// Slater group ordering: 1s | 2s2p | 3s3p | 3d | 4s4p | 4d | 4f | ...    Key is (n, 0) for s/p and (n, l) for d/f, compared lexicographically
+	// Slater group ordering: 1s | 2s2p | 3s3p | 3d | 4s4p | 4d | 4f |     Key is (n, 0) for s/p and (n, l) for d/f, compared lexicographically
 	int GroupClass(int l) { return l <= 1 ? 0 : l; }
 
 	bool SameGroup(int nA, int lA, int nB, int lB)

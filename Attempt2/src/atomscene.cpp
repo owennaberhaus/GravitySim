@@ -154,14 +154,19 @@ void AtomScene::Update(GLFWwindow* window, Camera& camera)
 		Rebuild(camera);
 }
 
-// Jump straight to an element. Same effect as the clear-then-click path, and
-// it releases the one-shot auto-framing so the new cloud gets refitted.
+// Jump straight to an element
 void AtomScene::SetElement(int z)
 {
 	m_element = std::max(1, std::min(z, 118));
 	m_view = kValence;
 	m_framedOnce = false;
 	m_dirty = true;
+}
+
+void AtomScene::Refresh(Camera& camera)
+{
+	if (m_dirty)
+		Rebuild(camera);
 }
 
 void AtomScene::Rebuild(Camera& camera)
@@ -271,7 +276,7 @@ void AtomScene::BuildSurfaces()
 	}
 
 	if (m_cloudExtent <= 0.0f)
-		m_cloudExtent = 1.0f; // no electrons, so nothing sets the scale
+		m_cloudExtent = 1.0f; // no electrons
 
 	m_surfaceVerts = static_cast<GLsizei>(verts.size() / 6);
 
@@ -447,7 +452,7 @@ void AtomScene::Render(Camera& camera)
 	int modelLoc = m_shader->GetModelLoc();
 	int colorLoc = m_shader->GetColorLoc();
 
-	// R grows as A^(1/3), but measured against the cloud rather than in absolute units, so a contracting cloud can never be swallowed by its own nucleus.
+	// R grows as A^(1/3), but measured against the cloud rather than in absolute units, so like a clamp on size
 	float nucleusR = NucleusRadius();
 	if (nucleusR > 0.0f)
 	{

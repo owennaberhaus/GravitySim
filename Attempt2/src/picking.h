@@ -7,7 +7,6 @@
 namespace picking
 {
 	// World-space direction of the ray under the cursor.
-	// The cursor is in WINDOW coordinates, so it must be normalised against the window size - not the framebuffer size, which differs on a scaled display.
 	inline glm::vec3 MouseRay(GLFWwindow* window, double mouseX, double mouseY,
 		const glm::mat4& projection, const glm::mat4& view)
 	{

@@ -1,8 +1,6 @@
 #pragma once
 
-// The one place that knows which GL loader exists. Desktop links GLEW against
-// real OpenGL 3.3; the browser has no loader at all because WebGL2 entry points
-// are resolved by the JS glue, so GLES3 headers are included directly.
+// The one place that knows which GL loader exists. Desktop links GLEW against real OpenGL 3.3
 #ifdef __EMSCRIPTEN__
 	#include <GLES3/gl3.h>
 	#include <emscripten/emscripten.h>
