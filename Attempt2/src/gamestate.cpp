@@ -216,6 +216,7 @@ void GameState::DrawHud()
         m_fps = m_fps * 0.94f + (1.0f / m_deltaTime) * 0.06f;
 
     const float scale = 2.0f;
+    const float hint = 1.5f;
     const glm::vec3 label(0.62f, 0.72f, 0.90f);
     const glm::vec3 value(1.0f, 1.0f, 1.0f);
 
@@ -239,6 +240,7 @@ void GameState::DrawHud()
         if (!selected.empty())
             m_text.DrawAnchored("selected: " + selected, TextRenderer::Anchor::TopLeft,
                 0, scale, glm::vec3(1.0f, 0.85f, 0.45f));
+
     }
     else
     {
@@ -256,6 +258,7 @@ void GameState::DrawHud()
             m_text.DrawAnchored(preset, TextRenderer::Anchor::TopRight, line++, scale, glm::vec3(1.0f, 0.85f, 0.45f));
         if (m_paused)
             m_text.DrawAnchored("PAUSED", TextRenderer::Anchor::TopRight, line, scale, glm::vec3(1.0f, 0.7f, 0.3f));
+
     }
 
     char fps[32];
@@ -263,12 +266,30 @@ void GameState::DrawHud()
     m_text.DrawAnchored(fps, TextRenderer::Anchor::BottomRight, 0, 1.5f, label);
     if (presets::MobileMode())
     {
-        m_text.DrawAnchored("tap for the next scene", TextRenderer::Anchor::BottomLeft, 0, 1.5f, label);
+        m_text.DrawAnchored("tap for the next scene", TextRenderer::Anchor::BottomLeft, 0, hint, label);
     }
     else
     {
-        m_text.DrawAnchored("tab switches mode", TextRenderer::Anchor::BottomLeft, 0, 1.5f, label);
-        m_text.DrawAnchored("1-9 presets, 0 clears", TextRenderer::Anchor::BottomLeft, 1, 1.5f, label);
+        // Mouse text
+        const char* rows[5];
+        int count = 0;
+
+        if (m_mode == Mode::Quantum)
+        {
+            rows[count++] = "left click    next element";
+            rows[count++] = "right click   previous element";
+        }
+        else
+        {
+            rows[count++] = "left click    spawn immovable object";
+            rows[count++] = "right click   spawn movable object";
+            rows[count++] = "hover + space delete object";
+        }
+        rows[count++] = "1-9 presets, 0 clears";
+        rows[count++] = "tab switches mode";
+
+        for (int i = 0; i < count; ++i)
+            m_text.DrawAnchored(rows[i], TextRenderer::Anchor::BottomLeft, count - 1 - i, hint, label);
     }
 
     m_text.End();
