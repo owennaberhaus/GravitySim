@@ -64,10 +64,7 @@
   #controls {
     position: fixed;
     left: 50%;
-    bottom: 20px;
-=======
-    bottom: 160px;
->>>>>>> b1455c7eb431cb6ce3e750d72ff784b8c2f286c0
+    bottom: 38px;
     transform: translateX(-50%);
     /* Grid rather than flex: a shrink-to-fit fixed-position flex container
        wraps at its preferred minimum width, which broke the columns apart
@@ -200,27 +197,19 @@
     var controls = document.getElementById('controls');
     if (isTouch) controls.hidden = true;
 
-    // Sit just above the canvas help text
-    function liftControls() {
+    // Clear the fps line and the help text
+    function placeControls() {
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
-      controls.style.bottom = Math.round((5 * 25.5 + 18) / dpr) + 'px';
-    }
-    liftControls();
-    window.addEventListener('resize', liftControls);
+      controls.style.bottom = Math.round(38 / dpr) + 'px';
 
-    var dismissed = false;
-    function dismiss() {
-      if (dismissed) return;
-      dismissed = true;
-      controls.classList.add('hidden');
+      var minLeft = Math.round(444 / dpr) + 16;
+      var centred = (window.innerWidth - controls.offsetWidth) / 2;
+      controls.style.left = Math.round(Math.max(minLeft, centred)) + 'px';
+      controls.style.transform = 'none';
     }
-    canvas.addEventListener('mousedown', function () { canvas.focus(); dismiss(); });
-    window.addEventListener('keydown', dismiss);
-    window.addEventListener('wheel', dismiss, { passive: true });
-=======
-    if (isTouch) controls.hidden = true;
+    placeControls();
+    window.addEventListener('resize', placeControls);
     canvas.addEventListener('mousedown', function () { canvas.focus(); });
->>>>>>> b1455c7eb431cb6ce3e750d72ff784b8c2f286c0
 
     window.Module.onRuntimeInitialized = function () {
       document.getElementById('loading').hidden = true;
